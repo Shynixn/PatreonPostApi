@@ -1,6 +1,6 @@
-<h1><img src="papoa.resources/icon.png" alt="Papoa icon" width="56" /> PatreonPostApi (Unofficial) - Papoa</h1>
+<h1><img src="papoa.resources/icon.png" alt="Papoa icon" width="56" /> Papoa (Unofficial PatreonPostApi)</h1>
 
-PatreonPost API (Papoa) allows you to programmatically prepare and publish posts on patreon.com. This project is not affiliated with Patreon.
+Papoa allows you to programmatically prepare, publish and update posts on patreon.com. This project is not affiliated with Patreon.
 
 ## Background
 
