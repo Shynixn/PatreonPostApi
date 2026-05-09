@@ -25,7 +25,27 @@ The **Chrome extension is fully public** in this repository, so you can inspect 
 
 You do **not send Patreon credentials** to this service. Authentication stays **inside your own browser session**, and the extension operates **locally** in that session. From Patreon's point of view, this behaves like a browser automation or text autofill helper acting inside a **real, logged-in browser**, rather than a third-party service impersonating your account.
 
-## CLI Usage
+## Obtaining an API Key
+
+1. Visit [papoa.shynixn.com](https://papoa.shynixn.com/) and agree to the terms of service.
+2. Your free-tier API key will be shown after acceptance. For higher limits, subscribe to a membership at [patreon.com/c/shynixn/membership](https://www.patreon.com/c/shynixn/membership) and your key will be upgraded automatically.
+
+### Service Limits
+
+| Tier      | API Requests / Day | Upload Limit   | Posts       |
+| --------- | ------------------ | -------------- | ----------- |
+| Free      | 300                | 10 MB / year   | 2 / year    |
+| Basic     | 300                | 100 MB / month | 31 / month  |
+| Elite     | 500                | 300 MB / month | 200 / month |
+| Legendary | 500                | 600 MB / month | 500 / month |
+
+## CLI (GUI)
+
+Executing the `papoa.exe` (or the executable for other operating systems) opens an interactive gui to manage your posts. Navigate using the arrow keys on your keyboard.
+
+## CLI (Automation)
+
+For automation purposes, the CLI offers the following non interactivecommands:
 
 ### Configuration
 
