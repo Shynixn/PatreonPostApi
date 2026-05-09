@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Papoa Chrome Extension",
+  "version": "1.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtcGXcMsoQZmoBhVd7bh8JKtyZGLryOdJ8rInAq1e1uSX1PAgtUIfptHtdrZ7HdeCWhRRfZRqWwWXxLzNUV13EB9LezBULjfxhxIveGGhFfJsofDbhiMWkuX1DPOsf7N4q8PkSRm8LgYQ8qAF2foVXhBrhSbQTKBXImheH9iAL+yXLGn2AvNqCrP+hDz+TPmq9jwLwCgxXvZsaMX8QVk3OJy+0vXnywji4Cbzqw/b35St1nG50nHcyykLf2kUQOsw5SMYXrGQM4X1IXnqNdRGBKndv65uwgtYNo8ndo5JXvg6gUpgyD7wUEKhquRRcg5KeB4mObjySHOPCz60kOzc8wIDAQAB",
+  "description": "Papoa allows you to programmatically prepare and publish posts on patreon.com. This project is not affiliated with Patreon.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://www.patreon.com/*"
+  ],
+  "background": {
+    "service_worker": "dist/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png",
+      "144": "icon.png"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png",
+    "144": "icon.png"
+  },
+  "content_scripts": []
+}

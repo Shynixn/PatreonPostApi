@@ -1,0 +1,17 @@
+{
+  "name": "papoa-chromeextension",
+  "version": "1.0.0",
+  "description": "Chrome extension to post Minecraft Posts",
+  "scripts": {
+    "build": "tsc && mkdir -p dist/lib && cp node_modules/marked/lib/marked.esm.js dist/lib/marked.js",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "marked": "^17.0.1"
+  }
+}

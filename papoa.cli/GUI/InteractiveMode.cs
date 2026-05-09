@@ -1,0 +1,451 @@
+using Papoa.Contract;
+using Papoa.Entity;
+using Spectre.Console;
+
+namespace Papoa.Command;
+
+public class InteractiveMode(
+    IPostService postService,
+    IFileUploadService fileUploadService,
+    IPrintingService printingService)
+{
+    public async Task RunAsync()
+    {
+        AnsiConsole.Clear();
+        AnsiConsole.Write(new FigletText("Papoa").Color(Color.Cyan1));
+        AnsiConsole.WriteLine();
+
+        while (true)
+        {
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[bold]Main Menu[/]")
+                    .HighlightStyle("cyan1")
+                    .AddChoices("Posts", "Exit"));
+
+            if (choice == "Exit")
+            {
+                AnsiConsole.MarkupLine("[grey]Goodbye![/]");
+                break;
+            }
+
+            await HandlePostsMenuAsync();
+        }
+    }
+
+    private async Task HandlePostsMenuAsync()
+    {
+        while (true)
+        {
+            AnsiConsole.WriteLine();
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[bold]Posts[/]")
+                    .HighlightStyle("cyan1")
+                    .AddChoices("List", "Create", "Update", "Delete", "← Back"));
+
+            switch (choice)
+            {
+                case "List": await ListPostsAsync(); break;
+                case "Create": await CreatePostAsync(); break;
+                case "Update": await UpdatePostAsync(); break;
+                case "Delete": await DeletePostAsync(); break;
+                case "← Back": return;
+            }
+        }
+    }
+
+    // ─── List ────────────────────────────────────────────────────────────────
+
+    private async Task ListPostsAsync()
+    {
+        List<Post> posts = [];
+        try
+        {
+            await AnsiConsole.Status()
+                .StartAsync("Loading posts...", async _ =>
+                {
+                    posts = await postService.ListPostsAsync();
+                });
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+            Pause();
+            return;
+        }
+
+        if (posts.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]No posts found.[/]");
+            Pause();
+            return;
+        }
+
+        var table = new Table()
+            .Border(TableBorder.Rounded)
+            .BorderColor(Color.Grey)
+            .AddColumn(new TableColumn("[bold]Id[/]"))
+            .AddColumn(new TableColumn("[bold]Title[/]"))
+            .AddColumn(new TableColumn("[bold]Text[/]"))
+            .AddColumn(new TableColumn("[bold]Files[/]"))
+            .AddColumn(new TableColumn("[bold]Created At[/]"))
+            .AddColumn(new TableColumn("[bold]Patreon Updated At[/]"));
+
+        foreach (var post in posts)
+        {
+            table.AddRow(
+                new Text(post.Id),
+                new Text(printingService.StringProp(post.Title, post.Pending?.Title)),
+                new Text(Truncate(printingService.StringProp(post.Text, post.Pending?.Text), 50)),
+                new Text(printingService.FilesProp(post.Files, post.Pending?.AddFiles, post.Pending?.RemoveFiles)),
+                new Text(post.CreatedAt),
+                new Text(post.PatreonUpdatedAt ?? "-"));
+        }
+
+        AnsiConsole.Write(table);
+        Pause();
+    }
+
+    // ─── Create ──────────────────────────────────────────────────────────────
+
+    private async Task CreatePostAsync()
+    {
+        AnsiConsole.MarkupLine("[bold]Create Post[/]");
+        AnsiConsole.WriteLine();
+
+        var title = AnsiConsole.Prompt(
+            new TextPrompt<string>("Title:"));
+
+        var text = AnsiConsole.Prompt(
+            new TextPrompt<string>("Text [grey](optional)[/]:")
+                .AllowEmpty());
+
+        var textFormat = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Text format:")
+                .AddChoices("text/plain", "text/markdown"));
+
+        var addFiles = BrowseForFiles("Add files to attach:");
+
+        string? password = null;
+        if (AnsiConsole.Confirm("Encrypt with password?", defaultValue: false))
+        {
+            password = AnsiConsole.Prompt(new TextPrompt<string>("Password:").Secret());
+        }
+
+        var request = new PostCreateRequest
+        {
+            Title = title,
+            Text = text,
+            TextFormat = textFormat,
+            Encrypted = password != null,
+            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f) }).ToList(),
+        };
+
+        PostCreateResult? result = null;
+        try
+        {
+            await AnsiConsole.Status()
+                .StartAsync("Creating post...", async _ =>
+                {
+                    result = await postService.CreatePostAsync(request);
+                });
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+            Pause();
+            return;
+        }
+
+        if (result != null)
+        {
+            await UploadFilesAsync(result.UploadUrls, addFiles, password);
+            var post = result.Post;
+            AnsiConsole.MarkupLine("[green]Post created![/]");
+            AnsiConsole.MarkupLine($"  [bold]Id:[/]    {Markup.Escape(post.Id)}");
+            AnsiConsole.MarkupLine($"  [bold]Title:[/] {Markup.Escape(printingService.StringProp(post.Title, post.Pending?.Title))}");
+        }
+
+        Pause();
+    }
+
+    // ─── Update ──────────────────────────────────────────────────────────────
+
+    private async Task UpdatePostAsync()
+    {
+        var post = await SelectPostAsync("Select a post to update:");
+        if (post == null) return;
+
+        AnsiConsole.MarkupLine($"[bold]Updating:[/] {Markup.Escape(post.Title)}");
+        AnsiConsole.WriteLine();
+
+        var title = AnsiConsole.Prompt(
+            new TextPrompt<string>("Title:")
+                .DefaultValue(post.Title));
+
+        var text = AnsiConsole.Prompt(
+            new TextPrompt<string>("Text:")
+                .AllowEmpty()
+                .DefaultValue(post.Text));
+
+        var textFormat = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Text format:")
+                .AddChoices("text/plain", "text/markdown"));
+
+        var addFiles = BrowseForFiles("Add files to attach:");
+
+        var removeFiles = PromptForRemoveFiles();
+
+        string? password = null;
+        if (AnsiConsole.Confirm("Encrypt with password?", defaultValue: false))
+        {
+            password = AnsiConsole.Prompt(new TextPrompt<string>("Password:").Secret());
+        }
+
+        var request = new PostUpdateRequest
+        {
+            Id = post.Id,
+            Title = title,
+            Text = text,
+            TextFormat = textFormat,
+            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f) }).ToList(),
+            RemoveFiles = removeFiles.Select(n => new PostFile { Name = n }).ToList(),
+        };
+
+        PostUpdateResult? result = null;
+        try
+        {
+            await AnsiConsole.Status()
+                .StartAsync("Updating post...", async _ =>
+                {
+                    result = await postService.UpdatePostAsync(request);
+                });
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+            Pause();
+            return;
+        }
+
+        if (result != null)
+        {
+            await UploadFilesAsync(result.UploadUrls, addFiles, password);
+            AnsiConsole.MarkupLine("[green]Post updated![/]");
+        }
+
+        Pause();
+    }
+
+    // ─── Delete ──────────────────────────────────────────────────────────────
+
+    private async Task DeletePostAsync()
+    {
+        var post = await SelectPostAsync("Select a post to delete:");
+        if (post == null) return;
+
+        if (!AnsiConsole.Confirm($"[red]Delete[/] \"{Markup.Escape(post.Title)}\"?", defaultValue: false))
+        {
+            AnsiConsole.MarkupLine("[grey]Cancelled.[/]");
+            Pause();
+            return;
+        }
+
+        try
+        {
+            await AnsiConsole.Status()
+                .StartAsync("Deleting post...", async _ =>
+                {
+                    await postService.DeletePostAsync(post.Id);
+                });
+            AnsiConsole.MarkupLine("[green]Post deleted.[/]");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+        }
+
+        Pause();
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    private async Task<Post?> SelectPostAsync(string prompt)
+    {
+        List<Post> posts = [];
+        try
+        {
+            await AnsiConsole.Status()
+                .StartAsync("Loading posts...", async _ =>
+                {
+                    posts = await postService.ListPostsAsync();
+                });
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+            Pause();
+            return null;
+        }
+
+        if (posts.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]No posts found.[/]");
+            Pause();
+            return null;
+        }
+
+        return AnsiConsole.Prompt(
+            new SelectionPrompt<Post>()
+                .Title(prompt)
+                .HighlightStyle("cyan1")
+                .UseConverter(p => $"{p.Id}  {p.Title}")
+                .AddChoices(posts));
+    }
+
+    /// <summary>
+    /// Text-input loop for entering filenames to remove. Enter a blank line to finish.
+    /// </summary>
+    private static List<string> PromptForRemoveFiles()
+    {
+        var files = new List<string>();
+        AnsiConsole.MarkupLine("[bold]Remove files[/] [grey](enter filename to remove, leave blank to finish)[/]");
+
+        while (true)
+        {
+            var name = AnsiConsole.Prompt(
+                new TextPrompt<string>("Filename to remove [grey](blank = done)[/]:")
+                    .AllowEmpty());
+
+            if (string.IsNullOrWhiteSpace(name))
+                break;
+
+            var trimmed = name.Trim();
+            if (files.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+            {
+                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(trimmed)} already added to removal list.[/]");
+            }
+            else
+            {
+                files.Add(trimmed);
+                AnsiConsole.MarkupLine($"[red]Will remove:[/] {Markup.Escape(trimmed)}");
+            }
+        }
+
+        return files;
+    }
+
+    /// <summary>
+    /// Arrow-key file browser. Navigates directories; selecting a file adds it to the list.
+    /// </summary>
+    private static List<string> BrowseForFiles(string title)
+    {
+        const string DoneLabel = "✓  Done";
+        const string DirPrefix = "📁 ";
+        const string FilePrefix = "📄 ";
+        const string ParentLabel = "📁 ..";
+
+        var selected = new List<string>();
+        var currentDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!Directory.Exists(currentDir))
+            currentDir = Directory.GetCurrentDirectory();
+
+        AnsiConsole.MarkupLine($"[bold]{Markup.Escape(title)}[/] [grey](arrows to navigate, enter to open/select, choose ✓ Done when finished)[/]");
+
+        while (true)
+        {
+            var selectedLabel = selected.Count == 0
+                ? "[grey]none[/]"
+                : string.Join(", ", selected.Select(f => $"[cyan1]{Markup.Escape(Path.GetFileName(f))}[/]"));
+
+            AnsiConsole.MarkupLine($"[grey]Current:[/] [yellow]{Markup.Escape(currentDir)}[/]");
+            AnsiConsole.MarkupLine($"[grey]Selected:[/] {selectedLabel}");
+
+            var choices = new List<string> { DoneLabel };
+            if (Directory.GetParent(currentDir) != null)
+                choices.Add(ParentLabel);
+
+            try
+            {
+                choices.AddRange(Directory.GetDirectories(currentDir)
+                    .OrderBy(d => d)
+                    .Select(d => DirPrefix + Path.GetFileName(d)));
+                choices.AddRange(Directory.GetFiles(currentDir)
+                    .OrderBy(f => f)
+                    .Select(f => FilePrefix + Path.GetFileName(f)));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                AnsiConsole.MarkupLine("[red]Access denied.[/]");
+                currentDir = Directory.GetParent(currentDir)?.FullName ?? currentDir;
+                continue;
+            }
+
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .PageSize(18)
+                    .HighlightStyle("cyan1")
+                    .AddChoices(choices));
+
+            if (choice == DoneLabel)
+                break;
+
+            if (choice == ParentLabel)
+            {
+                currentDir = Directory.GetParent(currentDir)!.FullName;
+                continue;
+            }
+
+            if (choice.StartsWith(DirPrefix))
+            {
+                currentDir = Path.Combine(currentDir, choice[DirPrefix.Length..]);
+                continue;
+            }
+
+            // File selected
+            var fullPath = Path.Combine(currentDir, choice[FilePrefix.Length..]);
+            if (selected.Contains(fullPath))
+            {
+                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(Path.GetFileName(fullPath))} is already added.[/]");
+            }
+            else
+            {
+                selected.Add(fullPath);
+                AnsiConsole.MarkupLine($"[green]Added:[/] {Markup.Escape(Path.GetFileName(fullPath))}");
+            }
+
+            if (!AnsiConsole.Confirm("Add another file?", defaultValue: false))
+                break;
+        }
+
+        return selected;
+    }
+
+    private async Task UploadFilesAsync(List<PostUploadSession> uploadUrls, List<string> filePaths, string? password)
+    {
+        for (var i = 0; i < uploadUrls.Count; i++)
+        {
+            var session = uploadUrls[i];
+            var filePath = filePaths[i];
+            await AnsiConsole.Status()
+                .StartAsync($"Uploading [cyan1]{Markup.Escape(Path.GetFileName(filePath))}[/]...", async _ =>
+                {
+                    await fileUploadService.UploadFileAsync(session, filePath, password);
+                });
+            AnsiConsole.MarkupLine($"  Uploaded [cyan1]{Markup.Escape(Path.GetFileName(filePath))}[/].");
+        }
+    }
+
+    private static void Pause()
+    {
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[grey]Press any key to continue...[/]");
+        Console.ReadKey(intercept: true);
+    }
+
+    private static string Truncate(string s, int max) =>
+        s.Length <= max ? s : string.Concat(s.AsSpan(0, max), "…");
+}
