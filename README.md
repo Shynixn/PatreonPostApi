@@ -52,16 +52,42 @@ e.g. for windows, double click the `papoa-win-x64.exe` file
 
 For the full CLI reference, non interactive, see the [CLI documentation](papoa.docs/CLI.md).
 
-**Linux / macOS**
+It should prompt you for your API key.
 
 ```bash
-export PAPOA_API_KEY="your-api-key"
+No API key found. Set the PAPOA_API_KEY environment variable, or enter one now.
+API key:
 ```
 
-**Windows (PowerShell)**
+```bash
 
-```powershell
-$env:PAPOA_API_KEY = "your-api-key"
+  ____
+ |  _ \    __ _   _ __     ___     __ _
+ | |_) |  / _` | | '_ \   / _ \   / _` |
+ |  __/  | (_| | | |_) | | (_) | | (_| |
+ |_|      \__,_| | .__/   \___/   \__,_|
+                 |_|
+
+Main Menu
+
+> Posts
+  Exit
+```
+
+Try the "list" command to see if the connection works as expected.
+
+```bash
+  ____
+ |  _ \    __ _   _ __     ___     __ _
+ | |_) |  / _` | | '_ \   / _ \   / _` |
+ |  __/  | (_| | | |_) | | (_) | | (_| |
+ |_|      \__,_| | .__/   \___/   \__,_|
+                 |_|
+
+
+No posts found.
+
+Press any key to continue...
 ```
 
 ### Step 4 — Install the Chrome Extension
@@ -70,33 +96,11 @@ The CLI queues posts for the Chrome extension to publish on your behalf. [Follow
 
 ### Step 5 — Create Your First Post
 
-Create a file called `post.md` for the body of your post:
+Download these two sample files to get started:
 
-```markdown
-# April Update — New Chapter & Behind-the-Scenes
+- [post.md](https://github.com/Shynixn/PatreonPostApi/raw/main/papoa.resources/post.md) — sample post body
+- [icon.png](https://github.com/Shynixn/PatreonPostApi/raw/main/papoa.resources/icon.png) — sample attached image
 
-Hey everyone! 👋
-
-This month's update is finally here, and I'm excited to share what I've been working on.
-
-## What's New
-
-- Finished the first draft of Chapter 12 — it's the longest one yet
-- Added 3 new behind-the-scenes photos from last week's shoot
-- Early access to the next episode is attached below
-
-## A Note from Me
-
-Thank you so much for your continued support — it genuinely makes this possible.
-If you have feedback or requests for next month, drop them in the comments!
-
-— Alex
-```
-
-Then run:
-
-```bash
-papoa post create --title "My First Post" --text-file post.md --text-format text/markdown
-```
+Place both files in the same folder, then open the Papoa interactive GUI (double-click the executable or run it without arguments). Use **Posts → Create**, fill in a title, select `post.md` as the text file with `text/markdown` format, attach `icon.png`, and confirm.
 
 Your post will appear in the extension's queue. Open your browser — the extension will detect it automatically and publish the post to your Patreon account.

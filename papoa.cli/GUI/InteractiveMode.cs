@@ -117,14 +117,48 @@ public class InteractiveMode(
         var title = AnsiConsole.Prompt(
             new TextPrompt<string>("Title:"));
 
-        var text = AnsiConsole.Prompt(
-            new TextPrompt<string>("Text [grey](optional)[/]:")
-                .AllowEmpty());
-
-        var textFormat = AnsiConsole.Prompt(
+        var textInputMode = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
-                .Title("Text format:")
-                .AddChoices("text/plain", "text/markdown"));
+                .Title("Post text:")
+                .HighlightStyle("cyan1")
+                .AddChoices("None", "Inline text", "Text file"));
+
+        string text = string.Empty;
+        string textFormat = "text/plain";
+
+        if (textInputMode == "Inline text")
+        {
+            text = AnsiConsole.Prompt(
+                new TextPrompt<string>("Text [grey](optional)[/]:")
+                    .AllowEmpty());
+
+            textFormat = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Text format:")
+                    .AddChoices("text/plain", "text/markdown"));
+        }
+        else if (textInputMode == "Text file")
+        {
+            var textFiles = BrowseForFiles("Select post text file:");
+            if (textFiles.Count > 0)
+            {
+                try
+                {
+                    text = await File.ReadAllTextAsync(textFiles[0]);
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Could not read file: {Markup.Escape(ex.Message)}[/]");
+                    Pause();
+                    return;
+                }
+            }
+
+            textFormat = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Text format:")
+                    .AddChoices("text/plain", "text/markdown"));
+        }
 
         var addFiles = BrowseForFiles("Add files to attach:");
 
@@ -185,15 +219,49 @@ public class InteractiveMode(
             new TextPrompt<string>("Title:")
                 .DefaultValue(post.Title));
 
-        var text = AnsiConsole.Prompt(
-            new TextPrompt<string>("Text:")
-                .AllowEmpty()
-                .DefaultValue(post.Text));
-
-        var textFormat = AnsiConsole.Prompt(
+        var textInputMode = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
-                .Title("Text format:")
-                .AddChoices("text/plain", "text/markdown"));
+                .Title("Post text:")
+                .HighlightStyle("cyan1")
+                .AddChoices("Keep existing", "Inline text", "Text file"));
+
+        string text = post.Text;
+        string textFormat = "text/plain";
+
+        if (textInputMode == "Inline text")
+        {
+            text = AnsiConsole.Prompt(
+                new TextPrompt<string>("Text:")
+                    .AllowEmpty()
+                    .DefaultValue(post.Text));
+
+            textFormat = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Text format:")
+                    .AddChoices("text/plain", "text/markdown"));
+        }
+        else if (textInputMode == "Text file")
+        {
+            var textFiles = BrowseForFiles("Select post text file:");
+            if (textFiles.Count > 0)
+            {
+                try
+                {
+                    text = await File.ReadAllTextAsync(textFiles[0]);
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Could not read file: {Markup.Escape(ex.Message)}[/]");
+                    Pause();
+                    return;
+                }
+            }
+
+            textFormat = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Text format:")
+                    .AddChoices("text/plain", "text/markdown"));
+        }
 
         var addFiles = BrowseForFiles("Add files to attach:");
 
