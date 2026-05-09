@@ -42,11 +42,15 @@ For higher limits, subscribe to a membership at [patreon.com/c/shynixn/membershi
 
 ### Step 2 — Download the CLI
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/Shynixn/PatreonPostApi/releases/latest). For the full CLI reference, see the [CLI documentation](papoa.docs/CLI.md).
+Download the latest release for your platform from [GitHub Releases](https://github.com/Shynixn/PatreonPostApi/releases/latest).
 
 ### Step 3 — Configure the CLI
 
-Set the `PAPOA_API_KEY` environment variable to your API key.
+Open the interactive version of the CLI by just starting the downloaded CLI without any arguments.
+
+e.g. for windows, double click the `papoa-win-x64.exe` file
+
+For the full CLI reference, non interactive, see the [CLI documentation](papoa.docs/CLI.md).
 
 **Linux / macOS**
 
