@@ -101,6 +101,121 @@ Download these two sample files to get started:
 - [post.md](https://github.com/Shynixn/PatreonPostApi/raw/main/papoa.resources/post.md) — sample post body
 - [icon.png](https://github.com/Shynixn/PatreonPostApi/raw/main/papoa.resources/icon.png) — sample attached image
 
-Place both files in the same folder, then open the Papoa interactive GUI (double-click the executable or run it without arguments). Use **Posts → Create**, fill in a title, select `post.md` as the text file with `text/markdown` format, attach `icon.png`, and confirm.
+Place both files in the same folder, then open the Papoa interactive GUI (double-click the executable or run it without arguments). Use **Posts → Create**.
 
-Your post will appear in the extension's queue. Open your browser — the extension will detect it automatically and publish the post to your Patreon account.
+1. Enter a title and select Text file
+
+```bash
+Create Post
+
+Title: My first Papoa post
+Post text:
+
+  None
+  Inline text
+> Text file
+```
+
+2. Select the post.md (Markdown) file and do not add any other files
+
+```bash
+Selected: none
+Added: post.md
+Add another file? [y/n] (n): n
+```
+
+3. Select text format markdown
+
+```bash
+Text format:
+
+  text/plain
+> text/markdown
+```
+
+4. Add the icon.png and do not add any other files
+
+```bash
+Added: icon.png
+Add another file? [y/n] (n): n
+```
+
+5. Encrypt with password and add a personal password. You should use the same password for all of your posts.
+
+```bash
+Add another file? [y/n] (n): n
+Encrypt with password? [y/n] (n): y
+Password: ****
+```
+
+6. Success
+
+```
+  Uploaded icon.png.
+Post created!
+  Id:    017ef6005bf8435b8f0f541a81e3cef3
+  Title: "" -> "My first Papoa post"
+```
+
+7. Use Post List to see all of your already created posts
+
+```bash
+╭──────────────────────────────────┬─────────────────────────────┬─────────────────────────────────────────────────────┬──────────────────┬──────────────────────────┬──────────────────────╮
+│ Id                               │ Title                       │ Text                                                │ Files            │ Created At               │ Patreon Updated At   │
+├──────────────────────────────────┼─────────────────────────────┼─────────────────────────────────────────────────────┼──────────────────┼──────────────────────────┼──────────────────────┤
+│ 017ef6005bf8435b8f0f541a81e3cef3 │ "" -> "My first Papoa post" │ "" -> "# April Update — New Chapter & Behind-the-S… │ [] -> [icon.png] │ 2026-05-09T18:05:56.977Z │ 0001-01-01T00:00:00Z │
+╰──────────────────────────────────┴─────────────────────────────┴─────────────────────────────────────────────────────┴──────────────────┴──────────────────────────┴──────────────────────╯
+```
+
+- This post has not been posted to patreon.com yet. You can see that the `Patreon Updated At` timestamp is not a valid value yet.
+- Posts automatically vanish after 30 days from Papoa. They stay available in patreon.com but are no longer managed by Papoa.
+
+### Step 7 — Automated posting to patreon.com
+
+1. Click on the refresh button on the top right in the Papoa ChromeExtension to load your posts.
+
+<details>
+<summary>Screenshot — load posts</summary>
+
+![Extension active and polling for pending posts](papoa.docs/chromeextension8.png)
+
+</details>
+
+2. Open the settings page and go through each of this points.
+
+<details>
+<summary>Screenshot — settings page</summary>
+
+![Extension settings page](papoa.docs/chromeextension6.png)
+
+</details>
+
+**Patreon checklist**
+
+Before continuing, make sure:
+
+- You are logged into patreon.com in this browser.
+- Your Patreon language is set to `English (United States)` — you can check this at https://www.patreon.com/settings/account.
+- You accept that the extension cannot be held responsible if a post is published with incorrect settings (e.g. wrong tier permissions).
+
+**Settings explained**
+
+| Setting                 | What it does                                                                                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Decryption password** | If you encrypted your files with a password in the CLI, enter that same password here so the extension can decrypt them before attaching.                   |
+| **Background fetch**    | The extension automatically opens a new Patreon tab, fills in the post, and waits. You still need to click **Post** yourself. Use this for semi-automation. |
+| **Auto-submit**         | The extension fills in the post _and_ clicks **Post** automatically — no user input needed. Combine with **Background fetch** for fully autonomous posting. |
+
+> **Note:** Patreon can change their website at any time, which may temporarily break auto-submit. Always check your posts after publishing.
+
+For this first test post, **leave both Background fetch and Auto-submit disabled**. This lets you review the filled-in post before submitting it yourself.
+
+3. Click **Post to patreon.com** to queue the post for publishing.
+
+---
+
+For the full CLI command reference, see the [CLI documentation](papoa.docs/CLI.md).
+
+## Final Notes
+
+Thank you for using Papoa — I hope it saves you as much time as it saves me. If you run into issues or have ideas, feel free to open an issue on GitHub. You can also message me via private message on https://patreon.com/c/Shynixn
