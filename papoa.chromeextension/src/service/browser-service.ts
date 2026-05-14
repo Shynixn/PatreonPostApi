@@ -75,7 +75,7 @@ export class BrowserService {
    * @param attributeValue The value of the attribute to match.
    * @param tabId Optional tab ID to target, defaults to active tab.
    */
-  async clickOnElementByAttribute(
+  async clickElementByAttribute(
     attributeName: string,
     attributeValue: string,
     tabId?: number,
@@ -133,7 +133,7 @@ export class BrowserService {
    * @param elementId The ID of the element to click.
    * @param tabId Optional tab ID to target, defaults to active tab.
    */
-  async clickOnElementById(elementId: string, tabId?: number): Promise<void> {
+  async clickElementById(elementId: string, tabId?: number): Promise<void> {
     const targetTabId = await this.resolveTabId(tabId);
     await chrome.scripting.executeScript({
       target: { tabId: targetTabId },
@@ -156,12 +156,62 @@ export class BrowserService {
   }
 
   /**
+   * Simulates typing or setting HTML into the body of an element found by ID.
+   * @param elementId The ID of the element.
+   * @param text The text or HTML to insert into the element's body.
+   * @param tabId Optional tab ID to target, defaults to active tab.
+   */
+  async writeElementById(
+    elementId: string,
+    text: string,
+    tabId?: number,
+  ): Promise<void> {
+    const targetTabId = await this.resolveTabId(tabId);
+    await chrome.scripting.executeScript({
+      target: { tabId: targetTabId },
+      func: (id: string, txt: string) => {
+        const el = document.getElementById(id) as any;
+        if (!el) {
+          console.warn(`Element with ID '${id}' not found.`);
+          return;
+        }
+        el.focus && el.focus();
+        const isHtml = /<[a-z][\s\S]*>/i.test(txt);
+        if (isHtml) {
+          el.innerHTML = txt;
+        } else {
+          const doc = el.ownerDocument;
+          if (doc) {
+            const selection = doc.getSelection && doc.getSelection();
+            if (selection && el.firstChild) {
+              const range = doc.createRange();
+              range.selectNodeContents(el);
+              selection.removeAllRanges();
+              selection.addRange(range);
+              doc.execCommand && doc.execCommand("delete", false);
+            } else {
+              el.innerHTML = "";
+            }
+            for (let i = 0; i < txt.length; i++) {
+              const char = txt[i];
+              doc.execCommand && doc.execCommand("insertText", false, char);
+            }
+          } else {
+            el.textContent = txt;
+          }
+        }
+      },
+      args: [elementId, text],
+    });
+  }
+
+  /**
    * Simulates typing text into the body of an iframe by its index on the page.
    * @param iframeIndex The index of the iframe in document.querySelectorAll('iframe').
    * @param text The text to type into the iframe's body.
    * @param tabId Optional tab ID to target, defaults to active tab.
    */
-  async writeIFrameText(
+  async writeIFrameByIndex(
     iframeIndex: number,
     text: string,
     tabId?: number,
@@ -235,7 +285,14 @@ export class BrowserService {
     return tab.url ?? "";
   }
 
-  async insertTextByName(
+  /**
+   * Sets the value of an input or textarea found by name attribute.
+   * @param name The name attribute of the element.
+   * @param text The value to set.
+   * @param tabId Optional tab ID to target, defaults to active tab.
+   * @param index Optional index when multiple elements share the same name (default: 0).
+   */
+  async writeElementByName(
     name: string,
     text: string,
     tabId?: number,
@@ -341,11 +398,11 @@ export class BrowserService {
   }
 
   /**
-   * Clicks on an element in the active tab using the provided XPath, then waits 3 seconds.
+   * Clicks on an element in the active tab using the provided XPath.
    * @param xPath The XPath of the element to click.
    * @param tabId The tab ID to execute the click in (optional, defaults to active tab)
    */
-  async clickOnElement(xPath: string, tabId?: number): Promise<void> {
+  async clickElementByXPath(xPath: string, tabId?: number): Promise<void> {
     const targetTabId = await this.resolveTabId(tabId);
     await chrome.scripting.executeScript({
       target: { tabId: targetTabId },
@@ -366,8 +423,32 @@ export class BrowserService {
       },
       args: [xPath],
     });
-    // Wait 3 seconds after click
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
+
+  /**
+   * Dispatches an Enter key press on the currently focused element in the tab.
+   * @param tabId Optional tab ID to target, defaults to active tab.
+   */
+  async pressEnter(tabId?: number): Promise<void> {
+    const targetTabId = await this.resolveTabId(tabId);
+    await chrome.scripting.executeScript({
+      target: { tabId: targetTabId },
+      func: () => {
+        const el = (document.activeElement ?? document.body) as HTMLElement;
+        const init: KeyboardEventInit = {
+          key: "Enter",
+          code: "Enter",
+          keyCode: 13,
+          which: 13,
+          bubbles: true,
+          cancelable: true,
+        };
+        el.dispatchEvent(new KeyboardEvent("keydown", init));
+        el.dispatchEvent(new KeyboardEvent("keypress", init));
+        el.dispatchEvent(new KeyboardEvent("keyup", init));
+      },
+      args: [],
+    });
   }
 
   async uploadFile(

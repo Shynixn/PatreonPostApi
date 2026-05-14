@@ -201,15 +201,15 @@ function createPostCard(
     statusText.textContent = "Opening Patreon and preparing your draft...";
 
     try {
+      console.log("Posting to Patreon:" + JSON.stringify(post));
       await onPostToPatreon(post);
       statusText.className = "small mt-2 text-success";
       statusText.textContent = "Posted and confirmed.";
       postButton.textContent = "Post to Patreon";
     } catch (error) {
+      console.error("Error posting to Patreon:", error);
       statusText.className = "small mt-2 text-danger";
-      statusText.textContent = `Failed to post: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`;
+      statusText.textContent = `Failed to post:` + error;
       postButton.textContent = "Post to Patreon";
     } finally {
       postButton.disabled = false;

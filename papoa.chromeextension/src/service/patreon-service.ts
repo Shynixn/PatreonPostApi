@@ -24,14 +24,18 @@ export class PatreonService {
     const targetTabId = tabId
       ? await this.browserService.navigateTabTo(tabId, this.patreonUrl)
       : await this.browserService.navigateActiveTabTo(this.patreonUrl);
-    await this.browserService.delay(1000);
 
+    // Title
+    await this.browserService.delay(5000);
     await this.browserService.writeElementByAttribute(
       "placeholder",
       "Title",
       pending.title,
       targetTabId,
     );
+
+    // Content
+    await this.browserService.delay(1000);
     await this.browserService.writeElementByAttribute(
       "class",
       "remirror-editor-wrapper",
@@ -41,47 +45,120 @@ export class PatreonService {
       targetTabId,
     );
 
-    // TODO: Handle isPublic / tierNames — if pending.isPublic is true, select "Public" access;
-    //       otherwise open the tier selector and click each tier in pending.tierNames.
-    await this.browserService.clickOnElementByAttribute(
-      "aria-label",
-      "Select tiers",
-      targetTabId,
-    );
+    // Paid or Public
     await this.browserService.delay(1000);
-    await this.browserService.clickOnElementByAttribute(
-      "id",
-      "Basic_17654380",
-      targetTabId,
-    );
-    await this.browserService.delay(1000);
+    if (post.isPublic) {
+      this.browserService.clickElementByAttribute(
+        "aria-label",
+        "Free access",
+        targetTabId,
+      );
+    } else {
+      this.browserService.clickElementByAttribute("value", "paid", targetTabId);
 
-    // TODO: Handle collectionNames — open the collections dropdown and select each collection
-    //       in pending.collectionNames.
-    await this.browserService.clickOnElementByAttribute(
+      // Select Specific Tiers
+      await this.browserService.delay(1000);
+      await this.browserService.clickElementByAttribute(
+        "aria-label",
+        "Select tiers",
+        targetTabId,
+      );
+
+      for (const tierName of pending.tierNames) {
+        await this.browserService.delay(1000);
+        await this.browserService.clickElementByAttribute(
+          "aria-label",
+          tierName,
+          targetTabId,
+        );
+      }
+    }
+
+    // Select Collections
+    await this.browserService.delay(1000);
+    await this.browserService.clickElementByAttribute(
       "aria-label",
       "Icon indicating the dropdown can be expanded to display a creator's collections",
       targetTabId,
     );
-    await this.browserService.delay(1000);
-    await this.browserService.clickOnElementByAttribute(
-      "aria-label",
-      "BlockBall",
-      targetTabId,
-    );
-    await this.browserService.delay(1000);
+    for (const collectionName of pending.collectionNames) {
+      await this.browserService.delay(1000);
+      await this.browserService.clickElementByAttribute(
+        "aria-label",
+        collectionName,
+        targetTabId,
+      );
+    }
 
-    // TODO: Handle tags — find the tag input and add each tag from pending.tags.
+    // Publish Date
+    if (post.publishDateUtc != null) {
+      await this.browserService.delay(1000);
+      await this.browserService.clickElementById(
+        "scheduled-for-toggle",
+        targetTabId,
+      );
+      await this.browserService.delay(1000);
+      // Date
+      await this.browserService.clickElementById("date", targetTabId);
+      const date = new Date(post.publishDateUtc);
+      const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(date.getUTCDate()).padStart(2, "0");
+      const year = date.getUTCFullYear();
+      await this.browserService.delay(100);
+      await this.browserService.writeElementById(
+        "date",
+        `${month}`,
+        targetTabId,
+      );
+      await this.browserService.delay(100);
+      await this.browserService.writeElementById("date", `${day}`, targetTabId);
+      await this.browserService.delay(100);
+      await this.browserService.writeElementById(
+        "date",
+        `${year}`,
+        targetTabId,
+      );
+      // Time
+      await this.browserService.clickElementById(":r2h:", targetTabId);
+      const hours = String(date.getUTCHours()).padStart(2, "0");
+      const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+      await this.browserService.delay(100);
+      await this.browserService.writeElementById(
+        ":r2h:",
+        `${hours}`,
+        targetTabId,
+      );
+      await this.browserService.delay(100);
+      await this.browserService.writeElementById(
+        ":r2h:",
+        `${minutes}`,
+        targetTabId,
+      );
+    }
 
-    // TODO: Handle publishDateUtc — if pending.publishDateUtc is set, open the schedule picker
-    //       and enter the date/time value.
+    // Post tags
+    if (post.tags != null) {
+      await this.browserService.delay(1000);
+      await this.browserService.clickElementByAttribute(
+        "data-tag",
+        "tags-auto-complete",
+        targetTabId,
+      );
 
-    // Retrieve current opened url and extract the Patreon post ID
-    const currentUrl = await this.browserService.getTabUrl(targetTabId);
-    console.log("Current tab URL:", currentUrl);
-    const patreonPostIdMatch = currentUrl.match(/\/posts\/(\d+)/);
-    const patreonPostId = patreonPostIdMatch?.[1];
+      for (const tag of post.tags) {
+        await this.browserService.delay(500);
+        await this.browserService.writeElementByAttribute(
+          "data-tag",
+          "tags-auto-complete",
+          tag,
+          targetTabId,
+        );
+        await this.browserService.delay(500);
+        await this.browserService.pressEnter(targetTabId);
+      }
+    }
 
+    // File Uploads
     const postWithUrls = await this.postService.getPostWithDownloadUrls(
       post.id,
     );
@@ -119,16 +196,28 @@ export class PatreonService {
       }
     }
 
+    // Submit the post and confirm in Papoa
     if (autoSubmit) {
       await this.browserService.delay(1000);
-      this.browserService.clickOnElementByAttribute(
+      await this.browserService.clickElementByAttribute(
         "data-tag",
         "make-a-post-action-publish",
+        targetTabId,
+      );
+      await this.browserService.clickElementByAttribute(
+        "data-tag",
+        "make-a-post-action-schedule_post",
         targetTabId,
       );
       await this.browserService.delay(10000);
     }
 
+    // Retrieve current opened url and extract the Patreon post ID
+    const currentUrl = await this.browserService.getTabUrl(targetTabId);
+    console.log("Current tab URL:", currentUrl);
+    const patreonPostIdMatch = currentUrl.match(/\/posts\/(\d+)/);
+    const patreonPostId = patreonPostIdMatch?.[1];
+    // Confirm posts
     await this.postService.confirmPost(post, patreonPostId ?? undefined);
   }
 }

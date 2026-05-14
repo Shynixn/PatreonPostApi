@@ -13,13 +13,25 @@ public class PostService(HttpClient httpClient) : IPostService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
+    private static async Task EnsureSuccessAsync(HttpResponseMessage response)
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(
+                $"Response status code does not indicate success: {(int)response.StatusCode} ({response.ReasonPhrase}). Body: {body}",
+                null,
+                response.StatusCode);
+        }
+    }
+
     /// <summary>
     /// Creates a new post via POST /api/v1/post and returns the create result.
     /// </summary>
     public async Task<PostCreateResult> CreatePostAsync(PostCreateRequest request)
     {
         var response = await httpClient.PostAsJsonAsync("/api/v1/post", request, JsonOptions);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
 
         var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<PostCreateResult>>(JsonOptions);
 
@@ -37,7 +49,7 @@ public class PostService(HttpClient httpClient) : IPostService
     public async Task<PostUpdateResult> UpdatePostAsync(PostUpdateRequest request)
     {
         var response = await httpClient.PutAsJsonAsync($"/api/v1/post/{request.Id}", request, JsonOptions);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
 
         var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<PostUpdateResult>>(JsonOptions);
 
@@ -55,7 +67,7 @@ public class PostService(HttpClient httpClient) : IPostService
     public async Task DeletePostAsync(string id)
     {
         var response = await httpClient.DeleteAsync($"/api/v1/post/{id}");
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
     }
 
     /// <summary>
@@ -66,7 +78,7 @@ public class PostService(HttpClient httpClient) : IPostService
         if (id is not null)
         {
             var response = await httpClient.GetAsync($"/api/v1/post/{id}");
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessAsync(response);
 
             var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<Post>>(JsonOptions);
 
@@ -80,7 +92,7 @@ public class PostService(HttpClient httpClient) : IPostService
         else
         {
             var response = await httpClient.GetAsync("/api/v1/post");
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessAsync(response);
 
             var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Post>>>(JsonOptions);
 
