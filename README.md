@@ -41,7 +41,7 @@ You do **not send Patreon credentials** to this service. Authentication stays **
 
 Visit [papoa.shynixn.com](https://papoa.shynixn.com/) and agree to the terms of service. Your free-tier API key will be shown after acceptance.
 
-For higher limits, subscribe to a membership at [patreon.com/c/shynixn/membership](https://www.patreon.com/c/shynixn/membership) and your key will be upgraded on relogin on [papoa.shynixn.com](https://papoa.shynixn.com/).
+For higher limits, subscribe to a membership at [patreon.com/c/shynixn/membership](https://www.patreon.com/c/shynixn/membership) and your key will be upgraded on re-login on [papoa.shynixn.com](https://papoa.shynixn.com/).
 
 | Tier      | API Requests / Day | Posts       | Upload Limit   |
 | --------- | ------------------ | ----------- | -------------- |
