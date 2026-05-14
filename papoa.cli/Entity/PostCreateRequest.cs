@@ -13,4 +13,6 @@ public class PostCreateRequest
     public int? TtlDays { get; set; }
     public bool Encrypted { get; set; }
     public List<PostFile>? AddFiles { get; set; }
+    public List<string>? ImageVideoAudioFileNames { get; set; }
+    public List<string>? AttachmentFileNames { get; set; }
 }

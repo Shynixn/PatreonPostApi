@@ -192,6 +192,7 @@ public class InteractiveMode(
             CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
             Encrypted = password != null,
             AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f), Size = new FileInfo(f).Length }).ToList(),
+            AttachmentFileNames = addFiles.Count > 0 ? addFiles.Select(f => Path.GetFileName(f)).ToList() : null,
         };
 
         PostCreateResult? result = null;
@@ -318,6 +319,7 @@ public class InteractiveMode(
             CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
             AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f), Size = new FileInfo(f).Length }).ToList(),
             RemoveFiles = removeFiles.Select(n => new PostFile { Name = n }).ToList(),
+            AttachmentFileNames = addFiles.Count > 0 ? addFiles.Select(f => Path.GetFileName(f)).ToList() : null,
         };
 
         PostUpdateResult? result = null;

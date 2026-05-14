@@ -4,19 +4,6 @@ export interface PostFileDTO {
   url?: string;
 }
 
-export interface PostPendingDTO {
-  title: string;
-  content: string;
-  contentFormat: string;
-  isPublic: boolean;
-  tierNames: string[];
-  collectionNames: string[];
-  publishDateUtc?: string;
-  tags: string[];
-  addFiles: PostFileDTO[];
-  removeFiles: PostFileDTO[];
-}
-
 export interface PostGetResultDTO {
   id: string;
   title: string;
@@ -29,7 +16,22 @@ export interface PostGetResultDTO {
   collectionNames: string[];
   publishDateUtc?: string;
   tags: string[];
-  pending?: PostPendingDTO;
+  imageVideoAudioFileNames: string[];
+  attachmentFileNames: string[];
+  pending?: {
+    title: string;
+    content: string;
+    contentFormat: string;
+    isPublic: boolean;
+    tierNames: string[];
+    collectionNames: string[];
+    publishDateUtc?: string;
+    tags: string[];
+    addFiles: PostFileDTO[];
+    removeFiles: PostFileDTO[];
+    imageVideoAudioFileNames: string[];
+    attachmentFileNames: string[];
+  };
   patreonPostId: string;
   patreonUpdatedAt: string;
   updatedAt: string;
@@ -54,6 +56,8 @@ export interface PostCreateRequestDTO {
   ttlDays?: number;
   addFiles?: PostFileDTO[];
   encrypted?: boolean;
+  imageVideoAudioFileNames?: string[];
+  attachmentFileNames?: string[];
 }
 
 export interface PostCreateResultDTO {
@@ -73,6 +77,8 @@ export interface PostUpdateRequestDTO {
   patreonPostId?: string;
   addFiles?: PostFileDTO[];
   removeFiles?: PostFileDTO[];
+  imageVideoAudioFileNames?: string[];
+  attachmentFileNames?: string[];
 }
 
 export interface PostUpdateResultDTO {

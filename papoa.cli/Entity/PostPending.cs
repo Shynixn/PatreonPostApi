@@ -12,4 +12,6 @@ public class PostPending
     public List<string> Tags { get; set; } = [];
     public List<PostFile> AddFiles { get; set; } = [];
     public List<PostFile> RemoveFiles { get; set; } = [];
+    public List<string> ImageVideoAudioFileNames { get; set; } = [];
+    public List<string> AttachmentFileNames { get; set; } = [];
 }

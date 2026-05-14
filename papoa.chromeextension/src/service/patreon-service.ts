@@ -214,16 +214,35 @@ export class PatreonService {
             this.password,
           );
         }
-        await this.browserService.uploadFile(
-          "add-attachments-button",
-          fileContent,
-          file.name,
-          "application/octet-stream",
-          true,
-          targetTabId,
-        );
-      } catch {
-        console.warn(`Skipping file ${file.name}: error during upload.`);
+
+        if (pending.attachmentFileNames.includes(file.name)) {
+          await this.browserService.uploadFileById(
+            "add-attachments-button",
+            fileContent,
+            file.name,
+            "application/octet-stream",
+            true,
+            targetTabId,
+          );
+        }
+
+        if (pending.imageVideoAudioFileNames.includes(file.name)) {
+          await this.browserService.clickButtonByInnerHtml(
+            "browse",
+            targetTabId,
+          );
+          await this.browserService.delay(1000);
+          await this.browserService.uploadFileByInnerHTMLButton(
+            "Browse,",
+            fileContent,
+            file.name,
+            "application/octet-stream",
+            true,
+            targetTabId,
+          );
+        }
+      } catch (error) {
+        console.warn(`Skipping file ${file.name}: error during upload.`, error);
       }
     }
 
