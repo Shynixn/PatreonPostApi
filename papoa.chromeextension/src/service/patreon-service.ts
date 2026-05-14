@@ -66,6 +66,8 @@ export class PatreonService {
     await this.browserService.delay(1000);
     await this.browserService.clearTags(targetTabId);
 
+    // ################# START #####################
+
     // Title
     await this.browserService.delay(1000);
     await this.browserService.clickElementByAttribute(
@@ -84,7 +86,7 @@ export class PatreonService {
     await this.browserService.delay(1000);
     await this.browserService.writeElementByAttribute(
       "class",
-      "remirror-editor-wrapper",
+      "description-placeholder",
       pending.contentFormat === "text/markdown"
         ? `${await this.browserService.markdown2Html(pending.content)}`
         : "<p>" + pending.content.replace(/\n/g, "</p><p>") + "</p>",
