@@ -571,4 +571,31 @@ export class BrowserService {
       ],
     });
   }
+
+  /**
+   * Clicks the first <button> element whose trimmed innerHTML matches the given string.
+   * @param innerHtml The exact inner HTML to match (compared after trimming).
+   * @param tabId Optional tab ID to target, defaults to active tab.
+   */
+  async clickButtonByInnerHtml(
+    innerHtml: string,
+    tabId?: number,
+  ): Promise<void> {
+    const targetTabId = await this.resolveTabId(tabId);
+    await chrome.scripting.executeScript({
+      target: { tabId: targetTabId },
+      func: (html: string) => {
+        const buttons = Array.from(
+          document.querySelectorAll<HTMLButtonElement>("button"),
+        );
+        const button = buttons.find((b) => b.innerHTML.trim() === html.trim());
+        if (button) {
+          button.click();
+        } else {
+          console.warn(`Button with innerHTML '${html}' not found.`);
+        }
+      },
+      args: [innerHtml],
+    });
+  }
 }

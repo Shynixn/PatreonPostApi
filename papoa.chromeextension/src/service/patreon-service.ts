@@ -95,7 +95,7 @@ export class PatreonService {
 
     // Paid or Public
     await this.browserService.delay(1000);
-    if (post.isPublic) {
+    if (pending.isPublic) {
       this.browserService.clickElementByAttribute(
         "aria-label",
         "Free access",
@@ -146,7 +146,7 @@ export class PatreonService {
     );
 
     // Publish Date
-    if (post.publishDateUtc != null) {
+    if (pending.publishDateUtc != null) {
       await this.browserService.delay(1000);
       await this.browserService.clickElementById(
         "scheduled-for-toggle",
@@ -154,7 +154,7 @@ export class PatreonService {
       );
       // Date
       await this.browserService.delay(1000);
-      const date = new Date(post.publishDateUtc);
+      const date = new Date(pending.publishDateUtc);
       const month = String(date.getUTCMonth() + 1).padStart(2, "0");
       const day = String(date.getUTCDate()).padStart(2, "0");
       const year = date.getUTCFullYear();
@@ -175,8 +175,8 @@ export class PatreonService {
     }
 
     // Post tags
-    if (post.tags != null) {
-      for (const tag of post.tags) {
+    if (pending.tags != null) {
+      for (const tag of pending.tags) {
         await this.browserService.delay(1000);
         await this.browserService.writeElementByAttribute(
           "data-tag",
