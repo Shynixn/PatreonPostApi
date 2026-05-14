@@ -22,7 +22,7 @@ export class PatreonService {
     if (!pending) throw new Error("Post has no pending content to publish.");
 
     let patreonUrl = this.patreonUrl;
-    if (post.patreonPostId != null) {
+    if (post.patreonPostId != null && post.patreonPostId !== "") {
       patreonUrl = `https://www.patreon.com/posts/${post.patreonPostId}/edit`;
     }
 
@@ -85,8 +85,8 @@ export class PatreonService {
     // Content
     await this.browserService.delay(1000);
     await this.browserService.writeElementByAttribute(
-      "class",
-      "description-placeholder",
+      "aria-label",
+      "Text input field for post content",
       pending.contentFormat === "text/markdown"
         ? `${await this.browserService.markdown2Html(pending.content)}`
         : "<p>" + pending.content.replace(/\n/g, "</p><p>") + "</p>",

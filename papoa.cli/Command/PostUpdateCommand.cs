@@ -65,6 +65,7 @@ public class PostUpdateCommand(IPostService postService, IFileUploadService file
             var tierNames = parseResult.GetValue(tierNamesOption) ?? [];
             var collectionNames = parseResult.GetValue(collectionNamesOption) ?? [];
             var publishDateUtc = parseResult.GetValue(publishDateUtcOption);
+            if (publishDateUtc?.Length == 0) publishDateUtc = null;
             var tags = parseResult.GetValue(tagsOption) ?? [];
             var patreonPostId = parseResult.GetValue(patreonPostIdOption);
             var outputFormat = parseResult.GetValue(outputFormatOption)!;
