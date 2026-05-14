@@ -232,12 +232,12 @@ export class PatreonService {
             targetTabId,
           );
           await this.browserService.delay(1000);
-          await this.browserService.uploadFileByInnerHTMLButton(
-            "Browse,",
+          await this.browserService.uploadFileById(
+            "photosInput",
             fileContent,
             file.name,
-            "application/octet-stream",
-            true,
+            "image/png",
+            false,
             targetTabId,
           );
         }

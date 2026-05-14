@@ -527,7 +527,15 @@ export class BrowserService {
   ): Promise<void> {
     const targetTabId = await this.resolveTabId(tabId);
     // Convert fileContent to base64 for transfer
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(fileContent)));
+    const base64 = await new Promise<string>((resolve) => {
+      const blob = new Blob([fileContent as BlobPart]);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target!.result as string;
+        resolve(dataUrl.split(",")[1]);
+      };
+      reader.readAsDataURL(blob);
+    });
     await chrome.scripting.executeScript({
       target: { tabId: targetTabId },
       func: (
@@ -564,65 +572,6 @@ export class BrowserService {
       },
       args: [
         String(elementId),
-        String(base64),
-        String(fileName),
-        String(mimeType),
-        Boolean(useChildSelect),
-      ],
-    });
-  }
-
-  async uploadFileByInnerHTMLButton(
-    innerHTML: string,
-    fileContent: ArrayBuffer | Uint8Array,
-    fileName: string,
-    mimeType: string,
-    useChildSelect: boolean = false,
-    tabId?: number,
-  ): Promise<void> {
-    const targetTabId = await this.resolveTabId(tabId);
-    // Convert fileContent to base64 for transfer
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(fileContent)));
-    await chrome.scripting.executeScript({
-      target: { tabId: targetTabId },
-      func: (
-        innerHTML: string,
-        b64: string,
-        fname: string,
-        mtype: string,
-        useChild: boolean,
-      ) => {
-        let el = Array.from(document.querySelectorAll("button")).find(
-          (b) => b.innerHTML.trim() === innerHTML.trim(),
-        ) as HTMLInputElement;
-        if (useChild) {
-          el = Array.from(el.children).filter(
-            (c) => c.tagName === "INPUT",
-          )[0] as HTMLInputElement;
-        }
-        if (!el || el.type !== "file") {
-          console.warn(
-            `Button with innerHTML '${innerHTML}' is not a file input.`,
-          );
-          return;
-        }
-        // Convert base64 to Blob
-        const byteString = atob(b64);
-        const ab = new ArrayBuffer(byteString.length);
-        const ia = new Uint8Array(ab);
-        for (let i = 0; i < byteString.length; i++) {
-          ia[i] = byteString.charCodeAt(i);
-        }
-        const file = new File([ab], fname, { type: mtype });
-        // Create a DataTransfer to set files property
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        el.files = dt.files;
-        el.dispatchEvent(new Event("input", { bubbles: true }));
-        el.dispatchEvent(new Event("change", { bubbles: true }));
-      },
-      args: [
-        String(innerHTML),
         String(base64),
         String(fileName),
         String(mimeType),
