@@ -43,12 +43,12 @@ Visit [papoa.shynixn.com](https://papoa.shynixn.com/) and agree to the terms of 
 
 For higher limits, subscribe to a membership at [patreon.com/c/shynixn/membership](https://www.patreon.com/c/shynixn/membership) and your key will be upgraded on re-login on [papoa.shynixn.com](https://papoa.shynixn.com/).
 
-| Tier      | API Requests / Day | Posts       | Upload Limit   |
-| --------- | ------------------ | ----------- | -------------- |
-| Free      | 300                | 1 / month   | 5 MB           |
-| Basic     | 300                | 100 / month | 500 MB / month |
-| Elite     | 500                | 200 / month | 2 GB / month   |
-| Legendary | 500                | 500 / month | 5 GB / month   |
+| Tier      | API Requests / Day | Posts / Month | Upload Limit / Month |
+| --------- | ------------------ | ------------- | -------------------- |
+| Free      | 300                | 1             | 5 MB                 |
+| Basic     | 300                | 100           | 500 MB               |
+| Elite     | 500                | 200           | 2 GB                 |
+| Legendary | 500                | 500           | 5 GB                 |
 
 ### Step 2 — Download the CLI
 
