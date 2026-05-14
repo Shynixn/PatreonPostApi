@@ -34,11 +34,15 @@ public class PostListCommand(IPostService postService, IPrintingService printing
             {
                 foreach (var post in posts)
                 {
-                    Console.WriteLine($"Id:         {post.Id}");
-                    Console.WriteLine($"Title:      {printingService.StringProp(post.Title, post.Pending?.Title)}");
-                    Console.WriteLine($"Text:       {printingService.StringProp(post.Text, post.Pending?.Text)}");
-                    Console.WriteLine($"Files:      {printingService.FilesProp(post.Files, post.Pending?.AddFiles, post.Pending?.RemoveFiles)}");
-                    Console.WriteLine($"Created At: {post.CreatedAt}");
+                    Console.WriteLine($"Id:               {post.Id}");
+                    Console.WriteLine($"Title:            {printingService.StringProp(post.Title, post.Pending?.Title)}");
+                    Console.WriteLine($"Content:          {printingService.StringProp(post.Content, post.Pending?.Content)}");
+                    Console.WriteLine($"Is Public:        {post.IsPublic}");
+                    Console.WriteLine($"Tier Names:       {string.Join(", ", post.TierNames)}");
+                    Console.WriteLine($"Collection Names: {string.Join(", ", post.CollectionNames)}");
+                    Console.WriteLine($"Tags:             {string.Join(", ", post.Tags)}");
+                    Console.WriteLine($"Files:            {printingService.FilesProp(post.Files, post.Pending?.AddFiles, post.Pending?.RemoveFiles)}");
+                    Console.WriteLine($"Created At:       {post.CreatedAt}");
                     Console.WriteLine();
                 }
             }

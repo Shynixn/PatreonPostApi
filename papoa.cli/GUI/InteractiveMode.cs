@@ -87,7 +87,9 @@ public class InteractiveMode(
             .BorderColor(Color.Grey)
             .AddColumn(new TableColumn("[bold]Id[/]"))
             .AddColumn(new TableColumn("[bold]Title[/]"))
-            .AddColumn(new TableColumn("[bold]Text[/]"))
+            .AddColumn(new TableColumn("[bold]Content[/]"))
+            .AddColumn(new TableColumn("[bold]Public[/]"))
+            .AddColumn(new TableColumn("[bold]Tiers[/]"))
             .AddColumn(new TableColumn("[bold]Files[/]"))
             .AddColumn(new TableColumn("[bold]Created At[/]"))
             .AddColumn(new TableColumn("[bold]Patreon Updated At[/]"));
@@ -97,7 +99,9 @@ public class InteractiveMode(
             table.AddRow(
                 new Text(post.Id),
                 new Text(printingService.StringProp(post.Title, post.Pending?.Title)),
-                new Text(Truncate(printingService.StringProp(post.Text, post.Pending?.Text), 50)),
+                new Text(Truncate(printingService.StringProp(post.Content, post.Pending?.Content), 50)),
+                new Text(post.IsPublic ? "Yes" : "No"),
+                new Text(string.Join(", ", post.TierNames)),
                 new Text(printingService.FilesProp(post.Files, post.Pending?.AddFiles, post.Pending?.RemoveFiles)),
                 new Text(post.CreatedAt),
                 new Text(post.PatreonUpdatedAt ?? "-"));
@@ -117,34 +121,34 @@ public class InteractiveMode(
         var title = AnsiConsole.Prompt(
             new TextPrompt<string>("Title:"));
 
-        var textInputMode = AnsiConsole.Prompt(
+        var contentInputMode = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
-                .Title("Post text:")
+                .Title("Post content:")
                 .HighlightStyle("cyan1")
                 .AddChoices("None", "Inline text", "Text file"));
 
-        string text = string.Empty;
-        string textFormat = "text/plain";
+        string content = string.Empty;
+        string contentFormat = "text/plain";
 
-        if (textInputMode == "Inline text")
+        if (contentInputMode == "Inline text")
         {
-            text = AnsiConsole.Prompt(
-                new TextPrompt<string>("Text [grey](optional)[/]:")
+            content = AnsiConsole.Prompt(
+                new TextPrompt<string>("Content [grey](optional)[/]:")
                     .AllowEmpty());
 
-            textFormat = AnsiConsole.Prompt(
+            contentFormat = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("Text format:")
+                    .Title("Content format:")
                     .AddChoices("text/plain", "text/markdown"));
         }
-        else if (textInputMode == "Text file")
+        else if (contentInputMode == "Text file")
         {
-            var textFiles = BrowseForFiles("Select post text file:");
-            if (textFiles.Count > 0)
+            var contentFiles = BrowseForFiles("Select post content file:");
+            if (contentFiles.Count > 0)
             {
                 try
                 {
-                    text = await File.ReadAllTextAsync(textFiles[0]);
+                    content = await File.ReadAllTextAsync(contentFiles[0]);
                 }
                 catch (Exception ex)
                 {
@@ -154,11 +158,21 @@ public class InteractiveMode(
                 }
             }
 
-            textFormat = AnsiConsole.Prompt(
+            contentFormat = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("Text format:")
+                    .Title("Content format:")
                     .AddChoices("text/plain", "text/markdown"));
         }
+
+        var isPublic = AnsiConsole.Confirm("Is the post public (available to everyone)?\n[grey]No = restricted to paying Patreons only[/]", defaultValue: false);
+
+        List<string> tierNames = [];
+        if (!isPublic)
+        {
+            tierNames = PromptForStringList("Tier names [grey](which tiers can access this post)[/]");
+        }
+
+        var collectionNames = PromptForStringList("Collection names [grey](collections this post belongs to)[/]");
 
         var addFiles = BrowseForFiles("Add files to attach:");
 
@@ -171,8 +185,11 @@ public class InteractiveMode(
         var request = new PostCreateRequest
         {
             Title = title,
-            Text = text,
-            TextFormat = textFormat,
+            Content = content,
+            ContentFormat = contentFormat,
+            IsPublic = isPublic,
+            TierNames = tierNames.Count > 0 ? tierNames : null,
+            CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
             Encrypted = password != null,
             AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f) }).ToList(),
         };
@@ -198,8 +215,13 @@ public class InteractiveMode(
             await UploadFilesAsync(result.UploadUrls, addFiles, password);
             var post = result.Post;
             AnsiConsole.MarkupLine("[green]Post created![/]");
-            AnsiConsole.MarkupLine($"  [bold]Id:[/]    {Markup.Escape(post.Id)}");
-            AnsiConsole.MarkupLine($"  [bold]Title:[/] {Markup.Escape(printingService.StringProp(post.Title, post.Pending?.Title))}");
+            AnsiConsole.MarkupLine($"  [bold]Id:[/]       {Markup.Escape(post.Id)}");
+            AnsiConsole.MarkupLine($"  [bold]Title:[/]    {Markup.Escape(printingService.StringProp(post.Title, post.Pending?.Title))}");
+            AnsiConsole.MarkupLine($"  [bold]Public:[/]   {(post.IsPublic ? "Yes" : "No")}");
+            if (post.TierNames.Count > 0)
+                AnsiConsole.MarkupLine($"  [bold]Tiers:[/]    {Markup.Escape(string.Join(", ", post.TierNames))}");
+            if (post.CollectionNames.Count > 0)
+                AnsiConsole.MarkupLine($"  [bold]Collections:[/] {Markup.Escape(string.Join(", ", post.CollectionNames))}");
         }
 
         Pause();
@@ -219,35 +241,35 @@ public class InteractiveMode(
             new TextPrompt<string>("Title:")
                 .DefaultValue(post.Title));
 
-        var textInputMode = AnsiConsole.Prompt(
+        var contentInputMode = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
-                .Title("Post text:")
+                .Title("Post content:")
                 .HighlightStyle("cyan1")
                 .AddChoices("Keep existing", "Inline text", "Text file"));
 
-        string text = post.Text;
-        string textFormat = "text/plain";
+        string content = post.Content;
+        string contentFormat = post.ContentFormat;
 
-        if (textInputMode == "Inline text")
+        if (contentInputMode == "Inline text")
         {
-            text = AnsiConsole.Prompt(
-                new TextPrompt<string>("Text:")
+            content = AnsiConsole.Prompt(
+                new TextPrompt<string>("Content:")
                     .AllowEmpty()
-                    .DefaultValue(post.Text));
+                    .DefaultValue(post.Content));
 
-            textFormat = AnsiConsole.Prompt(
+            contentFormat = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("Text format:")
+                    .Title("Content format:")
                     .AddChoices("text/plain", "text/markdown"));
         }
-        else if (textInputMode == "Text file")
+        else if (contentInputMode == "Text file")
         {
-            var textFiles = BrowseForFiles("Select post text file:");
-            if (textFiles.Count > 0)
+            var contentFiles = BrowseForFiles("Select post content file:");
+            if (contentFiles.Count > 0)
             {
                 try
                 {
-                    text = await File.ReadAllTextAsync(textFiles[0]);
+                    content = await File.ReadAllTextAsync(contentFiles[0]);
                 }
                 catch (Exception ex)
                 {
@@ -257,11 +279,23 @@ public class InteractiveMode(
                 }
             }
 
-            textFormat = AnsiConsole.Prompt(
+            contentFormat = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("Text format:")
+                    .Title("Content format:")
                     .AddChoices("text/plain", "text/markdown"));
         }
+
+        var isPublic = AnsiConsole.Confirm("Is the post public (available to everyone)?\n[grey]No = restricted to paying Patreons only[/]", defaultValue: post.IsPublic);
+
+        List<string> tierNames = [];
+        if (!isPublic)
+        {
+            AnsiConsole.MarkupLine($"[grey]Current tier names: {(post.TierNames.Count > 0 ? string.Join(", ", post.TierNames) : "none")}[/]");
+            tierNames = PromptForStringList("Tier names [grey](which tiers can access this post)[/]");
+        }
+
+        AnsiConsole.MarkupLine($"[grey]Current collection names: {(post.CollectionNames.Count > 0 ? string.Join(", ", post.CollectionNames) : "none")}[/]");
+        var collectionNames = PromptForStringList("Collection names [grey](collections this post belongs to)[/]");
 
         var addFiles = BrowseForFiles("Add files to attach:");
 
@@ -277,8 +311,11 @@ public class InteractiveMode(
         {
             Id = post.Id,
             Title = title,
-            Text = text,
-            TextFormat = textFormat,
+            Content = content,
+            ContentFormat = contentFormat,
+            IsPublic = isPublic,
+            TierNames = tierNames.Count > 0 ? tierNames : null,
+            CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
             AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f) }).ToList(),
             RemoveFiles = removeFiles.Select(n => new PostFile { Name = n }).ToList(),
         };
@@ -372,6 +409,38 @@ public class InteractiveMode(
                 .HighlightStyle("cyan1")
                 .UseConverter(p => $"{p.Id}  {p.Title}")
                 .AddChoices(posts));
+    }
+
+    /// <summary>
+    /// Text-input loop for entering a list of strings. Enter a blank line to finish.
+    /// </summary>
+    private static List<string> PromptForStringList(string title)
+    {
+        var items = new List<string>();
+        AnsiConsole.MarkupLine($"[bold]{title}[/] [grey](enter value, leave blank to finish)[/]");
+
+        while (true)
+        {
+            var value = AnsiConsole.Prompt(
+                new TextPrompt<string>("Value [grey](blank = done)[/]:")
+                    .AllowEmpty());
+
+            if (string.IsNullOrWhiteSpace(value))
+                break;
+
+            var trimmed = value.Trim();
+            if (items.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+            {
+                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(trimmed)} already in the list.[/]");
+            }
+            else
+            {
+                items.Add(trimmed);
+                AnsiConsole.MarkupLine($"[green]Added:[/] {Markup.Escape(trimmed)}");
+            }
+        }
+
+        return items;
     }
 
     /// <summary>

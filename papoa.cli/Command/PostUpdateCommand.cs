@@ -15,14 +15,20 @@ public class PostUpdateCommand(IPostService postService, IFileUploadService file
 
         var idOption = new Option<string>("--id") { Required = true };
         var titleOption = new Option<string>("--title") { Required = true };
-        var textOption = new Option<string>("--text") { Required = false };
-        var textFormatOption = new Option<string>("--text-format")
+        var contentOption = new Option<string>("--content") { Required = false };
+        var contentFormatOption = new Option<string>("--content-format")
         {
             Required = false,
             DefaultValueFactory = _ => "text/plain",
         };
-        textFormatOption.AcceptOnlyFromAmong("text/plain", "text/markdown");
-        var textFileOption = new Option<string>("--text-file") { Required = false };
+        contentFormatOption.AcceptOnlyFromAmong("text/plain", "text/markdown");
+        var contentFileOption = new Option<string>("--content-file") { Required = false };
+        var isPublicOption = new Option<bool>("--is-public") { Required = false, DefaultValueFactory = _ => false };
+        var tierNamesOption = new Option<List<string>>("--tier-name") { Required = false };
+        var collectionNamesOption = new Option<List<string>>("--collection-name") { Required = false };
+        var publishDateUtcOption = new Option<string?>("--publish-date-utc") { Required = false };
+        var tagsOption = new Option<List<string>>("--tag") { Required = false };
+        var patreonPostIdOption = new Option<string?>("--patreon-post-id") { Required = false };
         var addFilesOption = new Option<List<string>>("--add-file") { Required = false };
         var removeFilesOption = new Option<List<string>>("--remove-file") { Required = false };
         var passwordOption = new Option<string?>("--password") { Required = false };
@@ -35,9 +41,15 @@ public class PostUpdateCommand(IPostService postService, IFileUploadService file
 
         command.Add(idOption);
         command.Add(titleOption);
-        command.Add(textOption);
-        command.Add(textFormatOption);
-        command.Add(textFileOption);
+        command.Add(contentOption);
+        command.Add(contentFormatOption);
+        command.Add(contentFileOption);
+        command.Add(isPublicOption);
+        command.Add(tierNamesOption);
+        command.Add(collectionNamesOption);
+        command.Add(publishDateUtcOption);
+        command.Add(tagsOption);
+        command.Add(patreonPostIdOption);
         command.Add(addFilesOption);
         command.Add(removeFilesOption);
         command.Add(passwordOption);
@@ -47,25 +59,37 @@ public class PostUpdateCommand(IPostService postService, IFileUploadService file
         {
             var id = parseResult.GetValue(idOption)!;
             var title = parseResult.GetValue(titleOption)!;
-            var text = parseResult.GetValue(textOption) ?? string.Empty;
-            var textFormat = parseResult.GetValue(textFormatOption)!;
+            var content = parseResult.GetValue(contentOption) ?? string.Empty;
+            var contentFormat = parseResult.GetValue(contentFormatOption)!;
+            var isPublic = parseResult.GetValue(isPublicOption);
+            var tierNames = parseResult.GetValue(tierNamesOption) ?? [];
+            var collectionNames = parseResult.GetValue(collectionNamesOption) ?? [];
+            var publishDateUtc = parseResult.GetValue(publishDateUtcOption);
+            var tags = parseResult.GetValue(tagsOption) ?? [];
+            var patreonPostId = parseResult.GetValue(patreonPostIdOption);
             var outputFormat = parseResult.GetValue(outputFormatOption)!;
             var addFiles = parseResult.GetValue(addFilesOption) ?? [];
             var removeFiles = parseResult.GetValue(removeFilesOption) ?? [];
             var password = parseResult.GetValue(passwordOption);
-            var textFile = parseResult.GetValue(textFileOption);
+            var contentFile = parseResult.GetValue(contentFileOption);
 
-            if (!string.IsNullOrEmpty(textFile))
+            if (!string.IsNullOrEmpty(contentFile))
             {
-                text = await File.ReadAllTextAsync(textFile);
+                content = await File.ReadAllTextAsync(contentFile);
             }
 
             var request = new PostUpdateRequest
             {
                 Id = id,
                 Title = title,
-                Text = text,
-                TextFormat = textFormat,
+                Content = content,
+                ContentFormat = contentFormat,
+                IsPublic = isPublic,
+                TierNames = tierNames.Count > 0 ? tierNames : null,
+                CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
+                PublishDateUtc = publishDateUtc,
+                Tags = tags.Count > 0 ? tags : null,
+                PatreonPostId = patreonPostId,
                 AddFiles = addFiles.Select(e => new PostFile { Name = Path.GetFileName(e) }).ToList(),
                 RemoveFiles = removeFiles.Select(e => new PostFile { Name = Path.GetFileName(e) }).ToList()
             };
@@ -94,9 +118,13 @@ public class PostUpdateCommand(IPostService postService, IFileUploadService file
             {
                 var post = updateResult.Post;
                 Console.WriteLine("Post Updated");
-                Console.WriteLine($"  Id:         {post.Id}");
-                Console.WriteLine($"  Title:      {printingService.StringProp(post.Title, post.Pending?.Title)}");
-                Console.WriteLine($"  Text:       {printingService.StringProp(post.Text, post.Pending?.Text)}");
+                Console.WriteLine($"  Id:                 {post.Id}");
+                Console.WriteLine($"  Title:              {printingService.StringProp(post.Title, post.Pending?.Title)}");
+                Console.WriteLine($"  Content:            {printingService.StringProp(post.Content, post.Pending?.Content)}");
+                Console.WriteLine($"  Is Public:          {post.IsPublic}");
+                Console.WriteLine($"  Tier Names:         {string.Join(", ", post.TierNames)}");
+                Console.WriteLine($"  Collection Names:   {string.Join(", ", post.CollectionNames)}");
+                Console.WriteLine($"  Tags:               {string.Join(", ", post.Tags)}");
                 Console.WriteLine($"  Files:              {printingService.FilesProp(post.Files, post.Pending?.AddFiles, post.Pending?.RemoveFiles)}");
                 Console.WriteLine($"  Created At:         {post.CreatedAt}");
                 Console.WriteLine($"  Patreon Updated At: {post.PatreonUpdatedAt ?? "-"}");
