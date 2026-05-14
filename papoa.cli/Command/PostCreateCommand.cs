@@ -84,7 +84,7 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
                 Tags = tags.Count > 0 ? tags : null,
                 TtlDays = ttlDays,
                 Encrypted = !string.IsNullOrEmpty(password),
-                AddFiles = addFiles.Select(e => new PostFile { Name = Path.GetFileName(e) }).ToList(),
+                AddFiles = addFiles.Select(e => new PostFile { Name = Path.GetFileName(e), Size = new FileInfo(e).Length }).ToList(),
             };
 
             var createResult = await postService.CreatePostAsync(request);

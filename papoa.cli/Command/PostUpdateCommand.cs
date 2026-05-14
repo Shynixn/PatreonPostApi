@@ -90,7 +90,7 @@ public class PostUpdateCommand(IPostService postService, IFileUploadService file
                 PublishDateUtc = publishDateUtc,
                 Tags = tags.Count > 0 ? tags : null,
                 PatreonPostId = patreonPostId,
-                AddFiles = addFiles.Select(e => new PostFile { Name = Path.GetFileName(e) }).ToList(),
+                AddFiles = addFiles.Select(e => new PostFile { Name = Path.GetFileName(e), Size = new FileInfo(e).Length }).ToList(),
                 RemoveFiles = removeFiles.Select(e => new PostFile { Name = Path.GetFileName(e) }).ToList()
             };
 

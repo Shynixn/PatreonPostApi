@@ -191,7 +191,7 @@ public class InteractiveMode(
             TierNames = tierNames.Count > 0 ? tierNames : null,
             CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
             Encrypted = password != null,
-            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f) }).ToList(),
+            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f), Size = new FileInfo(f).Length }).ToList(),
         };
 
         PostCreateResult? result = null;
@@ -316,7 +316,7 @@ public class InteractiveMode(
             IsPublic = isPublic,
             TierNames = tierNames.Count > 0 ? tierNames : null,
             CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
-            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f) }).ToList(),
+            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f), Size = new FileInfo(f).Length }).ToList(),
             RemoveFiles = removeFiles.Select(n => new PostFile { Name = n }).ToList(),
         };
 
