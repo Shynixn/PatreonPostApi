@@ -27,15 +27,21 @@ Creates a new post and uploads any attached files.
 papoa post create --title <title> [options]
 ```
 
-| Option                    | Required | Description                                           |
-| ------------------------- | -------- | ----------------------------------------------------- |
-| `--title <value>`         | Yes      | Title of the post                                     |
-| `--text <value>`          | No       | Body text of the post                                 |
-| `--text-file <path>`      | No       | Read body text from a file (overrides `--text`)       |
-| `--text-format <value>`   | No       | `text/plain` (default) or `text/markdown`             |
-| `--file <path>`           | No       | File to attach (repeat for multiple files)            |
-| `--password <value>`      | No       | Encrypt attached files with AES-256-CBC before upload |
-| `--output-format <value>` | No       | Output format: `text/plain` (default)                 |
+| Option                       | Required | Description                                           |
+| ---------------------------- | -------- | ----------------------------------------------------- |
+| `--title <value>`            | Yes      | Title of the post                                     |
+| `--content <value>`          | No       | Body content of the post                              |
+| `--content-file <path>`      | No       | Read body content from a file (overrides `--content`) |
+| `--content-format <value>`   | No       | `text/plain` (default) or `text/markdown`             |
+| `--is-public`                | No       | Make the post publicly available (default: false)     |
+| `--tier-name <value>`        | No       | Tier that can access the post (repeat for multiple)   |
+| `--collection-name <value>`  | No       | Collection this post belongs to (repeat for multiple) |
+| `--publish-date-utc <value>` | No       | Scheduled publish date in UTC (ISO 8601)              |
+| `--tag <value>`              | No       | Tag to attach to the post (repeat for multiple)       |
+| `--ttl-days <value>`         | No       | Time-to-live in days before the post is removed       |
+| `--add-file <path>`          | No       | File to attach (repeat for multiple files)            |
+| `--password <value>`         | No       | Encrypt attached files with AES-256-CBC before upload |
+| `--output-format <value>`    | No       | Output format: `text/plain` (default)                 |
 
 > When `--password` is supplied, files are encrypted client-side with AES-256-CBC before leaving your
 > machine. The Papoa service stores only the ciphertext and cannot read your file contents. It is **highly** recommended to use `--password` when using the CLI. It protects you against potential leaks of your valuable files.
@@ -43,7 +49,8 @@ papoa post create --title <title> [options]
 **Example**
 
 ```bash
-papoa post create --title "My Post" --text-file post.md --text-format text/markdown --file image.png --password "my-secret"
+papoa post create --title "My Post" --content-file post.md --content-format text/markdown \
+  --is-public --tag release --collection-name "Dev Log" --add-file image.png --password "my-secret"
 ```
 
 ---
@@ -56,23 +63,31 @@ Updates an existing post by ID.
 papoa post update --id <id> --title <title> [options]
 ```
 
-| Option                    | Required | Description                                           |
-| ------------------------- | -------- | ----------------------------------------------------- |
-| `--id <value>`            | Yes      | ID of the post to update                              |
-| `--title <value>`         | Yes      | New title                                             |
-| `--text <value>`          | No       | New body text                                         |
-| `--text-file <path>`      | No       | Read body text from a file (overrides `--text`)       |
-| `--text-format <value>`   | No       | `text/plain` (default) or `text/markdown`             |
-| `--file <path>`           | No       | File to attach (repeat for multiple files)            |
-| `--password <value>`      | No       | Encrypt attached files with AES-256-CBC before upload |
-| `--output-format <value>` | No       | Output format: `text/plain` (default)                 |
+| Option                       | Required | Description                                           |
+| ---------------------------- | -------- | ----------------------------------------------------- |
+| `--id <value>`               | Yes      | ID of the post to update                              |
+| `--title <value>`            | Yes      | New title                                             |
+| `--content <value>`          | No       | New body content                                      |
+| `--content-file <path>`      | No       | Read body content from a file (overrides `--content`) |
+| `--content-format <value>`   | No       | `text/plain` (default) or `text/markdown`             |
+| `--is-public`                | No       | Make the post publicly available (default: false)     |
+| `--tier-name <value>`        | No       | Tier that can access the post (repeat for multiple)   |
+| `--collection-name <value>`  | No       | Collection this post belongs to (repeat for multiple) |
+| `--publish-date-utc <value>` | No       | Scheduled publish date in UTC (ISO 8601)              |
+| `--tag <value>`              | No       | Tag to attach to the post (repeat for multiple)       |
+| `--patreon-post-id <value>`  | No       | Override the linked Patreon post ID                   |
+| `--add-file <path>`          | No       | File to attach (repeat for multiple files)            |
+| `--remove-file <name>`       | No       | Filename to remove (repeat for multiple)              |
+| `--password <value>`         | No       | Encrypt attached files with AES-256-CBC before upload |
+| `--output-format <value>`    | No       | Output format: `text/plain` (default)                 |
 
 > When `--password` is supplied, files are encrypted with AES-256-CBC before upload. See the note under `post create` for details.
 
 **Example**
 
 ```bash
-papoa post update --id abc123 --title "Updated Title" --text "New content" --password "my-secret"
+papoa post update --id abc123 --title "Updated Title" --content "New content" \
+  --tag v2 --remove-file old-image.png --password "my-secret"
 ```
 
 ---

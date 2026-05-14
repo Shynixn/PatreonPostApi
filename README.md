@@ -225,6 +225,7 @@ For this first test post, **leave both Background fetch and Auto-submit disabled
 ---
 
 For the full CLI command reference, see the [CLI documentation](papoa.docs/CLI.md).
+For the REST API reference used by the CLI (and for building your own integrations), see the [API documentation](papoa.docs/API.md).
 
 ## Final Notes
 
