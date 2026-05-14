@@ -160,7 +160,7 @@ function createPostCard(
 
   const text = document.createElement("p");
   text.className = "card-text";
-  text.textContent = pending.text;
+  text.textContent = pending.content;
 
   const createdDate = document.createElement("p");
   createdDate.className = "text-muted small";

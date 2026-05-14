@@ -41,13 +41,21 @@ export class PostService {
     return body?.data as PostGetResultDTO;
   }
 
-  async confirmPost(post: PostGetResultDTO, patreonPostId?: string): Promise<void> {
+  async confirmPost(
+    post: PostGetResultDTO,
+    patreonPostId?: string,
+  ): Promise<void> {
     const pending = post.pending;
     if (!pending) return;
     const body: PostUpdateRequestDTO = {
       title: pending.title,
-      text: pending.text,
-      textFormat: pending.textFormat,
+      content: pending.content,
+      contentFormat: pending.contentFormat,
+      isPublic: pending.isPublic,
+      tierNames: pending.tierNames,
+      collectionNames: pending.collectionNames,
+      publishDateUtc: pending.publishDateUtc,
+      tags: pending.tags,
       patreonPostId,
     };
     const response = await fetch(

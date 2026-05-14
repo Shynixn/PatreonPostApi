@@ -1,12 +1,18 @@
 export interface PostFileDTO {
   name: string;
+  size?: number;
   url?: string;
 }
 
 export interface PostPendingDTO {
   title: string;
-  text: string;
-  textFormat: string;
+  content: string;
+  contentFormat: string;
+  isPublic: boolean;
+  tierNames: string[];
+  collectionNames: string[];
+  publishDateUtc?: string;
+  tags: string[];
   addFiles: PostFileDTO[];
   removeFiles: PostFileDTO[];
 }
@@ -14,11 +20,18 @@ export interface PostPendingDTO {
 export interface PostGetResultDTO {
   id: string;
   title: string;
-  text: string;
-  textFormat: string;
+  content: string;
+  contentFormat: string;
   files: PostFileDTO[];
   encrypted: boolean;
+  isPublic: boolean;
+  tierNames: string[];
+  collectionNames: string[];
+  publishDateUtc?: string;
+  tags: string[];
   pending?: PostPendingDTO;
+  patreonPostId: string;
+  patreonUpdatedAt: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -31,8 +44,14 @@ export interface PostUploadSessionDTO {
 
 export interface PostCreateRequestDTO {
   title: string;
-  text: string;
-  textFormat?: string;
+  content: string;
+  contentFormat?: string;
+  isPublic: boolean;
+  tierNames?: string[];
+  collectionNames?: string[];
+  publishDateUtc?: string;
+  tags?: string[];
+  ttlDays?: number;
   addFiles?: PostFileDTO[];
   encrypted?: boolean;
 }
@@ -44,8 +63,13 @@ export interface PostCreateResultDTO {
 
 export interface PostUpdateRequestDTO {
   title: string;
-  text: string;
-  textFormat?: string;
+  content: string;
+  contentFormat?: string;
+  isPublic: boolean;
+  tierNames?: string[];
+  collectionNames?: string[];
+  publishDateUtc?: string;
+  tags?: string[];
   patreonPostId?: string;
   addFiles?: PostFileDTO[];
   removeFiles?: PostFileDTO[];

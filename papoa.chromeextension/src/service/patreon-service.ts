@@ -35,12 +35,14 @@ export class PatreonService {
     await this.browserService.writeElementByAttribute(
       "class",
       "remirror-editor-wrapper",
-      pending.textFormat === "text/markdown"
-        ? `${await this.browserService.markdown2Html(pending.text)}`
-        : "<p>" + pending.text.replace(/\n/g, "</p><p>") + "</p>",
+      pending.contentFormat === "text/markdown"
+        ? `${await this.browserService.markdown2Html(pending.content)}`
+        : "<p>" + pending.content.replace(/\n/g, "</p><p>") + "</p>",
       targetTabId,
     );
 
+    // TODO: Handle isPublic / tierNames — if pending.isPublic is true, select "Public" access;
+    //       otherwise open the tier selector and click each tier in pending.tierNames.
     await this.browserService.clickOnElementByAttribute(
       "aria-label",
       "Select tiers",
@@ -54,6 +56,8 @@ export class PatreonService {
     );
     await this.browserService.delay(1000);
 
+    // TODO: Handle collectionNames — open the collections dropdown and select each collection
+    //       in pending.collectionNames.
     await this.browserService.clickOnElementByAttribute(
       "aria-label",
       "Icon indicating the dropdown can be expanded to display a creator's collections",
@@ -66,6 +70,11 @@ export class PatreonService {
       targetTabId,
     );
     await this.browserService.delay(1000);
+
+    // TODO: Handle tags — find the tag input and add each tag from pending.tags.
+
+    // TODO: Handle publishDateUtc — if pending.publishDateUtc is set, open the schedule picker
+    //       and enter the date/time value.
 
     // Retrieve current opened url and extract the Patreon post ID
     const currentUrl = await this.browserService.getTabUrl(targetTabId);
