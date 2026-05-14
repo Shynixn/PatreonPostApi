@@ -42,25 +42,15 @@ export class BrowserService {
         if (isHtml) {
           el.innerHTML = txt;
         } else {
-          // Try to select all and delete
           const doc = el.ownerDocument;
           if (doc) {
-            const selection = doc.getSelection && doc.getSelection();
-            if (selection && el.firstChild) {
-              const range = doc.createRange();
-              range.selectNodeContents(el);
-              selection.removeAllRanges();
-              selection.addRange(range);
-              doc.execCommand && doc.execCommand("delete", false);
-            } else {
-              el.innerHTML = "";
-            }
-            // Use execCommand to insert each character
-            for (let i = 0; i < txt.length; i++) {
-              const char = txt[i];
-              doc.execCommand && doc.execCommand("insertText", false, char);
-            }
+            doc.execCommand("selectAll", false);
+            doc.execCommand("delete", false);
+            doc.execCommand("insertText", false, txt);
           } else {
+            console.warn(
+              "Element has no ownerDocument, cannot insert text properly.",
+            );
             el.textContent = txt;
           }
         }
@@ -426,26 +416,45 @@ export class BrowserService {
   }
 
   /**
-   * Dispatches an Enter key press on the currently focused element in the tab.
+   * Dispatches a key press on the currently focused element in the tab.
+   * @param key The key value to dispatch (e.g. "Enter", "Escape", "Tab").
    * @param tabId Optional tab ID to target, defaults to active tab.
    */
-  async pressEnter(tabId?: number): Promise<void> {
+  async pressKey(key: string, tabId?: number): Promise<void> {
     const targetTabId = await this.resolveTabId(tabId);
     await chrome.scripting.executeScript({
       target: { tabId: targetTabId },
-      func: () => {
+      func: (k: string) => {
         const el = (document.activeElement ?? document.body) as HTMLElement;
         const init: KeyboardEventInit = {
-          key: "Enter",
-          code: "Enter",
-          keyCode: 13,
-          which: 13,
+          key: k,
           bubbles: true,
           cancelable: true,
         };
         el.dispatchEvent(new KeyboardEvent("keydown", init));
         el.dispatchEvent(new KeyboardEvent("keypress", init));
         el.dispatchEvent(new KeyboardEvent("keyup", init));
+      },
+      args: [key],
+    });
+  }
+
+  /**
+   * Unchecks all checkboxes on the page.
+   * @param tabId Optional tab ID to target, defaults to active tab.
+   */
+  async uncheckAll(tabId?: number): Promise<void> {
+    const targetTabId = await this.resolveTabId(tabId);
+    await chrome.scripting.executeScript({
+      target: { tabId: targetTabId },
+      func: () => {
+        const checkboxes = document.querySelectorAll<HTMLInputElement>(
+          'input[type="checkbox"]',
+        );
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = false;
+          checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+        });
       },
       args: [],
     });

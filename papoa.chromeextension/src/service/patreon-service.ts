@@ -21,12 +21,47 @@ export class PatreonService {
     const pending = post.pending;
     if (!pending) throw new Error("Post has no pending content to publish.");
 
+    let patreonUrl = this.patreonUrl;
+    if (post.patreonPostId != null) {
+      patreonUrl = `https://www.patreon.com/posts/${post.patreonPostId}/edit`;
+    }
+
     const targetTabId = tabId
-      ? await this.browserService.navigateTabTo(tabId, this.patreonUrl)
-      : await this.browserService.navigateActiveTabTo(this.patreonUrl);
+      ? await this.browserService.navigateTabTo(tabId, patreonUrl)
+      : await this.browserService.navigateActiveTabTo(patreonUrl);
+
+    // Make sure everything is unchecked and reset
+    await this.browserService.delay(5000);
+    await this.browserService.clickElementByAttribute(
+      "aria-label",
+      "Icon indicating the dropdown can be expanded to display a creator's collections",
+      targetTabId,
+    );
+    await this.browserService.delay(1000);
+    await this.browserService.uncheckAll(targetTabId);
+    this.browserService.clickElementByAttribute("value", "paid", targetTabId);
+    await this.browserService.delay(1000);
+    await this.browserService.clickElementByAttribute(
+      "aria-label",
+      "Select tiers",
+      targetTabId,
+    );
+    await this.browserService.delay(1000);
+    await this.browserService.uncheckAll(targetTabId);
+    await this.browserService.delay(1000);
+    this.browserService.clickElementByAttribute(
+      "aria-label",
+      "Free access",
+      targetTabId,
+    );
 
     // Title
-    await this.browserService.delay(5000);
+    await this.browserService.delay(1000);
+    await this.browserService.clickElementByAttribute(
+      "aria-label",
+      "Title",
+      targetTabId,
+    );
     await this.browserService.writeElementByAttribute(
       "placeholder",
       "Title",
@@ -145,16 +180,22 @@ export class PatreonService {
         targetTabId,
       );
 
+      // Clear existing tags
+      for (let i = 0; i < 50; i++) {
+        await this.browserService.delay(100);
+        await this.browserService.pressKey("Backspace", targetTabId);
+      }
+
       for (const tag of post.tags) {
-        await this.browserService.delay(500);
+        await this.browserService.delay(1000);
         await this.browserService.writeElementByAttribute(
           "data-tag",
           "tags-auto-complete",
           tag,
           targetTabId,
         );
-        await this.browserService.delay(500);
-        await this.browserService.pressEnter(targetTabId);
+        await this.browserService.delay(1000);
+        await this.browserService.pressKey("Enter", targetTabId);
       }
     }
 
@@ -218,6 +259,6 @@ export class PatreonService {
     const patreonPostIdMatch = currentUrl.match(/\/posts\/(\d+)/);
     const patreonPostId = patreonPostIdMatch?.[1];
     // Confirm posts
-    await this.postService.confirmPost(post, patreonPostId ?? undefined);
+    // await this.postService.confirmPost(post, patreonPostId ?? undefined);
   }
 }
