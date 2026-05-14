@@ -146,6 +146,39 @@ export class BrowserService {
   }
 
   /**
+   * Sets the value of an input, select, or textarea element found by ID.
+   * Fires input and change events so framework listeners are notified.
+   * @param elementId The ID of the element.
+   * @param value The value to set.
+   * @param tabId Optional tab ID to target, defaults to active tab.
+   */
+  async setValueById(
+    elementId: string,
+    value: string,
+    tabId?: number,
+  ): Promise<void> {
+    const targetTabId = await this.resolveTabId(tabId);
+    await chrome.scripting.executeScript({
+      target: { tabId: targetTabId },
+      func: (id: string, val: string) => {
+        const el = document.getElementById(id) as
+          | HTMLInputElement
+          | HTMLSelectElement
+          | HTMLTextAreaElement
+          | null;
+        if (!el) {
+          console.warn(`Element with ID '${id}' not found.`);
+          return;
+        }
+        el.value = val;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      },
+      args: [elementId, value],
+    });
+  }
+
+  /**
    * Simulates typing or setting HTML into the body of an element found by ID.
    * @param elementId The ID of the element.
    * @param text The text or HTML to insert into the element's body.
@@ -455,6 +488,30 @@ export class BrowserService {
           checkbox.checked = false;
           checkbox.dispatchEvent(new Event("change", { bubbles: true }));
         });
+      },
+      args: [],
+    });
+  }
+
+  /**
+   * Removes all tags by clicking their close buttons, skipping the first 2.
+   * Queries all elements with data-tag="IconClose", skips the first 2 entries,
+   * and clicks all remaining ones.
+   * @param tabId Optional tab ID to target, defaults to active tab.
+   */
+  async clearTags(tabId?: number): Promise<void> {
+    const targetTabId = await this.resolveTabId(tabId);
+    await chrome.scripting.executeScript({
+      target: { tabId: targetTabId },
+      func: async () => {
+        const closeButtons = document.querySelectorAll<HTMLElement>(
+          '[data-tag="IconClose"]',
+        );
+        const buttons = Array.from(closeButtons).slice(2);
+        for (const btn of buttons) {
+          btn.parentElement!.click();
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
       },
       args: [],
     });

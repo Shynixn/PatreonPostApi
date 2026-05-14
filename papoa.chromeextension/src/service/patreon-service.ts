@@ -29,9 +29,9 @@ export class PatreonService {
     const targetTabId = tabId
       ? await this.browserService.navigateTabTo(tabId, patreonUrl)
       : await this.browserService.navigateActiveTabTo(patreonUrl);
-
-    // Make sure everything is unchecked and reset
     await this.browserService.delay(5000);
+
+    // Reset Collections
     await this.browserService.clickElementByAttribute(
       "aria-label",
       "Icon indicating the dropdown can be expanded to display a creator's collections",
@@ -39,6 +39,15 @@ export class PatreonService {
     );
     await this.browserService.delay(1000);
     await this.browserService.uncheckAll(targetTabId);
+    await this.browserService.delay(1000);
+    await this.browserService.clickElementByAttribute(
+      "aria-label",
+      "Icon indicating the dropdown can be expanded to display a creator's collections",
+      targetTabId,
+    );
+
+    // Reset Tiers
+    await this.browserService.delay(1000);
     this.browserService.clickElementByAttribute("value", "paid", targetTabId);
     await this.browserService.delay(1000);
     await this.browserService.clickElementByAttribute(
@@ -54,6 +63,8 @@ export class PatreonService {
       "Free access",
       targetTabId,
     );
+    await this.browserService.delay(1000);
+    await this.browserService.clearTags(targetTabId);
 
     // Title
     await this.browserService.delay(1000);
@@ -116,6 +127,7 @@ export class PatreonService {
       "Icon indicating the dropdown can be expanded to display a creator's collections",
       targetTabId,
     );
+    await this.browserService.delay(1000);
     for (const collectionName of pending.collectionNames) {
       await this.browserService.delay(1000);
       await this.browserService.clickElementByAttribute(
@@ -124,6 +136,12 @@ export class PatreonService {
         targetTabId,
       );
     }
+    await this.browserService.delay(1000);
+    await this.browserService.clickElementByAttribute(
+      "aria-label",
+      "Icon indicating the dropdown can be expanded to display a creator's collections",
+      targetTabId,
+    );
 
     // Publish Date
     if (post.publishDateUtc != null) {
@@ -132,60 +150,30 @@ export class PatreonService {
         "scheduled-for-toggle",
         targetTabId,
       );
-      await this.browserService.delay(1000);
       // Date
-      await this.browserService.clickElementById("date", targetTabId);
+      await this.browserService.delay(1000);
       const date = new Date(post.publishDateUtc);
       const month = String(date.getUTCMonth() + 1).padStart(2, "0");
       const day = String(date.getUTCDate()).padStart(2, "0");
       const year = date.getUTCFullYear();
-      await this.browserService.delay(100);
-      await this.browserService.writeElementById(
+      await this.browserService.setValueById(
         "date",
-        `${month}`,
-        targetTabId,
-      );
-      await this.browserService.delay(100);
-      await this.browserService.writeElementById("date", `${day}`, targetTabId);
-      await this.browserService.delay(100);
-      await this.browserService.writeElementById(
-        "date",
-        `${year}`,
+        `${year}-${month}-${day}`,
         targetTabId,
       );
       // Time
-      await this.browserService.clickElementById(":r2h:", targetTabId);
+      await this.browserService.delay(1000);
       const hours = String(date.getUTCHours()).padStart(2, "0");
       const minutes = String(date.getUTCMinutes()).padStart(2, "0");
-      await this.browserService.delay(100);
-      await this.browserService.writeElementById(
-        ":r2h:",
-        `${hours}`,
-        targetTabId,
-      );
-      await this.browserService.delay(100);
-      await this.browserService.writeElementById(
-        ":r2h:",
-        `${minutes}`,
+      await this.browserService.setValueById(
+        ":r2n:",
+        `${hours}:${minutes}`,
         targetTabId,
       );
     }
 
     // Post tags
     if (post.tags != null) {
-      await this.browserService.delay(1000);
-      await this.browserService.clickElementByAttribute(
-        "data-tag",
-        "tags-auto-complete",
-        targetTabId,
-      );
-
-      // Clear existing tags
-      for (let i = 0; i < 50; i++) {
-        await this.browserService.delay(100);
-        await this.browserService.pressKey("Backspace", targetTabId);
-      }
-
       for (const tag of post.tags) {
         await this.browserService.delay(1000);
         await this.browserService.writeElementByAttribute(
@@ -255,7 +243,6 @@ export class PatreonService {
 
     // Retrieve current opened url and extract the Patreon post ID
     const currentUrl = await this.browserService.getTabUrl(targetTabId);
-    console.log("Current tab URL:", currentUrl);
     const patreonPostIdMatch = currentUrl.match(/\/posts\/(\d+)/);
     const patreonPostId = patreonPostIdMatch?.[1];
     // Confirm posts
