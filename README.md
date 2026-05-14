@@ -1,6 +1,16 @@
-<h1><img src="papoa.resources/icon.png" alt="Papoa icon" width="56" /> Papoa (Unofficial PatreonPostApi)</h1>
-
-Papoa allows you to programmatically prepare, publish and update posts on patreon.com. This project is not affiliated with Patreon.
+<div align="center">
+  <img src="papoa.resources/icon.png" alt="Papoa icon" width="96" />
+  <h1>Papoa</h1>
+  <p>
+    <img src="https://img.shields.io/badge/Chrome%20Extension-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome Extension" />
+    <img src="https://img.shields.io/badge/REST%20API-005571?style=flat-square&logo=openapiinitiative&logoColor=white" alt="REST API" />
+    <img src="https://img.shields.io/badge/CLI-Windows%20%7C%20Linux%20%7C%20Mac-6a0dad?style=flat-square&logo=windowsterminal&logoColor=white" alt="CLI" />
+    <img src="https://img.shields.io/badge/license-AGPL--3.0-green?style=flat-square" alt="License" />
+  </p>
+  <p>Programmatically prepare, publish and update posts on patreon.com.<br/>
+  <sub>This project is not affiliated with patreon.com</sub></p>
+  <hr/>
+</div>
 
 ## Background
 
