@@ -13,24 +13,11 @@ export class PatreonService {
     private password: string = "",
   ) {}
 
-  async postToPatreon(
+  async resetPatreonPost(
+    patreonUrl: string,
     post: PostGetResultDTO,
-    tabId?: number,
-    autoSubmit?: boolean,
+    targetTabId: number,
   ): Promise<void> {
-    const pending = post.pending;
-    if (!pending) throw new Error("Post has no pending content to publish.");
-
-    let patreonUrl = this.patreonUrl;
-    if (post.patreonPostId != null && post.patreonPostId !== "") {
-      patreonUrl = `https://www.patreon.com/posts/${post.patreonPostId}/edit`;
-    }
-
-    const targetTabId = tabId
-      ? await this.browserService.navigateTabTo(tabId, patreonUrl)
-      : await this.browserService.navigateActiveTabTo(patreonUrl);
-    await this.browserService.delay(5000);
-
     // Reset Collections
     await this.browserService.clickElementByAttribute(
       "aria-label",
@@ -65,6 +52,28 @@ export class PatreonService {
     );
     await this.browserService.delay(1000);
     await this.browserService.clearTags(targetTabId);
+  }
+
+  async postToPatreon(
+    post: PostGetResultDTO,
+    tabId?: number,
+    autoSubmit?: boolean,
+  ): Promise<void> {
+    const pending = post.pending;
+    if (!pending) throw new Error("Post has no pending content to publish.");
+
+    let patreonUrl = this.patreonUrl;
+    let isEditingExistingPost = false;
+    if (post.patreonPostId != null && post.patreonPostId !== "") {
+      patreonUrl = `https://www.patreon.com/posts/${post.patreonPostId}/edit`;
+      isEditingExistingPost = true;
+    }
+
+    const targetTabId = tabId
+      ? await this.browserService.navigateTabTo(tabId, patreonUrl)
+      : await this.browserService.navigateActiveTabTo(patreonUrl);
+    await this.browserService.delay(5000);
+    await this.resetPatreonPost(patreonUrl, post, targetTabId);
 
     // ################# START #####################
 
@@ -226,7 +235,7 @@ export class PatreonService {
           );
         }
 
-        if (pending.imageVideoAudioFileNames.includes(file.name)) {
+        if (pending.photoAttachmentFileNames.includes(file.name)) {
           await this.browserService.clickButtonByInnerHtml(
             "browse",
             targetTabId,
@@ -267,6 +276,6 @@ export class PatreonService {
     const patreonPostIdMatch = currentUrl.match(/\/posts\/(\d+)/);
     const patreonPostId = patreonPostIdMatch?.[1];
     // Confirm posts
-    // await this.postService.confirmPost(post, patreonPostId ?? undefined);
+    await this.postService.confirmPost(post, patreonPostId ?? undefined);
   }
 }

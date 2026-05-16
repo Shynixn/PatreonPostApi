@@ -16,7 +16,7 @@ export interface PostGetResultDTO {
   collectionNames: string[];
   publishDateUtc?: string;
   tags: string[];
-  imageVideoAudioFileNames: string[];
+  photoAttachmentFileNames: string[];
   attachmentFileNames: string[];
   pending?: {
     title: string;
@@ -29,7 +29,7 @@ export interface PostGetResultDTO {
     tags: string[];
     addFiles: PostFileDTO[];
     removeFiles: PostFileDTO[];
-    imageVideoAudioFileNames: string[];
+    photoAttachmentFileNames: string[];
     attachmentFileNames: string[];
   };
   patreonPostId: string;
@@ -56,7 +56,7 @@ export interface PostCreateRequestDTO {
   ttlDays?: number;
   addFiles?: PostFileDTO[];
   encrypted?: boolean;
-  imageVideoAudioFileNames?: string[];
+  photoAttachmentFileNames?: string[];
   attachmentFileNames?: string[];
 }
 
@@ -77,7 +77,7 @@ export interface PostUpdateRequestDTO {
   patreonPostId?: string;
   addFiles?: PostFileDTO[];
   removeFiles?: PostFileDTO[];
-  imageVideoAudioFileNames?: string[];
+  photoAttachmentFileNames?: string[];
   attachmentFileNames?: string[];
 }
 

@@ -14,6 +14,6 @@ public class PostUpdateRequest
     public string? PatreonPostId { get; set; }
     public List<PostFile>? AddFiles { get; set; }
     public List<PostFile>? RemoveFiles { get; set; }
-    public List<string>? ImageVideoAudioFileNames { get; set; }
+    public List<string>? PhotoAttachmentFileNames { get; set; }
     public List<string>? AttachmentFileNames { get; set; }
 }

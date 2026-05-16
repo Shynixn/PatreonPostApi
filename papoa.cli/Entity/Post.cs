@@ -13,7 +13,7 @@ public class Post
     public List<string> CollectionNames { get; set; } = [];
     public string? PublishDateUtc { get; set; }
     public List<string> Tags { get; set; } = [];
-    public List<string> ImageVideoAudioFileNames { get; set; } = [];
+    public List<string> PhotoAttachmentFileNames { get; set; } = [];
     public List<string> AttachmentFileNames { get; set; } = [];
     public PostPending? Pending { get; set; }
     public string PatreonPostId { get; set; } = string.Empty;

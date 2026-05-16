@@ -29,7 +29,7 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
         var tagsOption = new Option<List<string>>("--tag") { Required = false };
         var ttlDaysOption = new Option<int?>("--ttl-days") { Required = false };
         var addFilesOption = new Option<List<string>>("--add-file") { Required = false };
-        var imageVideoAudioFileNamesOption = new Option<List<string>>("--image-video-audio-file-name") { Required = false };
+        var photoAttachmentFileNamesOption = new Option<List<string>>("--photo-attachment-file-name") { Required = false };
         var attachmentFileNamesOption = new Option<List<string>>("--attachment-file-name") { Required = false };
         var passwordOption = new Option<string?>("--password") { Required = false };
         var outputFormatOption = new Option<string>("--output-format")
@@ -50,7 +50,7 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
         command.Add(tagsOption);
         command.Add(ttlDaysOption);
         command.Add(addFilesOption);
-        command.Add(imageVideoAudioFileNamesOption);
+        command.Add(photoAttachmentFileNamesOption);
         command.Add(attachmentFileNamesOption);
         command.Add(passwordOption);
         command.Add(outputFormatOption);
@@ -68,7 +68,7 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
             var ttlDays = parseResult.GetValue(ttlDaysOption);
             var outputFormat = parseResult.GetValue(outputFormatOption)!;
             var addFiles = parseResult.GetValue(addFilesOption) ?? [];
-            var imageVideoAudioFileNames = parseResult.GetValue(imageVideoAudioFileNamesOption) ?? [];
+            var photoAttachmentFileNames = parseResult.GetValue(photoAttachmentFileNamesOption) ?? [];
             var attachmentFileNames = parseResult.GetValue(attachmentFileNamesOption) ?? [];
             var password = parseResult.GetValue(passwordOption);
             var contentFile = parseResult.GetValue(contentFileOption);
@@ -91,7 +91,7 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
                 TtlDays = ttlDays,
                 Encrypted = !string.IsNullOrEmpty(password),
                 AddFiles = addFiles.Select(e => new PostFile { Name = Path.GetFileName(e), Size = new FileInfo(e).Length }).ToList(),
-                ImageVideoAudioFileNames = imageVideoAudioFileNames.Count > 0 ? imageVideoAudioFileNames : null,
+                PhotoAttachmentFileNames = photoAttachmentFileNames.Count > 0 ? photoAttachmentFileNames : null,
                 AttachmentFileNames = attachmentFileNames.Count > 0 ? attachmentFileNames : null,
             };
 
