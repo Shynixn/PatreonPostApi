@@ -519,29 +519,32 @@ export class BrowserService {
 
   async uploadFileById(
     elementId: string,
-    fileContent: ArrayBuffer | Uint8Array,
-    fileName: string,
+    files: Array<{ content: ArrayBuffer | Uint8Array; name: string }>,
     mimeType: string,
     useChildSelect: boolean = false,
     tabId?: number,
   ): Promise<void> {
     const targetTabId = await this.resolveTabId(tabId);
-    // Convert fileContent to base64 for transfer
-    const base64 = await new Promise<string>((resolve) => {
-      const blob = new Blob([fileContent as BlobPart]);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target!.result as string;
-        resolve(dataUrl.split(",")[1]);
-      };
-      reader.readAsDataURL(blob);
-    });
+    // Convert all file contents to base64 for transfer
+    const base64Files = await Promise.all(
+      files.map(async ({ content, name }) => {
+        const base64 = await new Promise<string>((resolve) => {
+          const blob = new Blob([content as BlobPart]);
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const dataUrl = e.target!.result as string;
+            resolve(dataUrl.split(",")[1]);
+          };
+          reader.readAsDataURL(blob);
+        });
+        return { base64, name };
+      }),
+    );
     await chrome.scripting.executeScript({
       target: { tabId: targetTabId },
       func: (
         id: string,
-        b64: string,
-        fname: string,
+        filesData: Array<{ base64: string; name: string }>,
         mtype: string,
         useChild: boolean,
       ) => {
@@ -555,25 +558,23 @@ export class BrowserService {
           console.warn(`Element with ID '${id}' is not a file input.`);
           return;
         }
-        // Convert base64 to Blob
-        const byteString = atob(b64);
-        const ab = new ArrayBuffer(byteString.length);
-        const ia = new Uint8Array(ab);
-        for (let i = 0; i < byteString.length; i++) {
-          ia[i] = byteString.charCodeAt(i);
-        }
-        const file = new File([ab], fname, { type: mtype });
-        // Create a DataTransfer to set files property
         const dt = new DataTransfer();
-        dt.items.add(file);
+        for (const { base64, name } of filesData) {
+          const byteString = atob(base64);
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          dt.items.add(new File([ab], name, { type: mtype }));
+        }
         el.files = dt.files;
         el.dispatchEvent(new Event("input", { bubbles: true }));
         el.dispatchEvent(new Event("change", { bubbles: true }));
       },
       args: [
         String(elementId),
-        String(base64),
-        String(fileName),
+        base64Files,
         String(mimeType),
         Boolean(useChildSelect),
       ],

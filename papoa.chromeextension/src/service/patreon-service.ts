@@ -218,6 +218,8 @@ export class PatreonService {
       post.id,
     );
     const filesToUpload = postWithUrls.pending?.addFiles ?? [];
+    const attachmentFiles: Array<{ content: ArrayBuffer; name: string }> = [];
+    const photoFiles: Array<{ content: ArrayBuffer; name: string }> = [];
     for (const file of filesToUpload) {
       if (!file.url) {
         console.warn(`Skipping file ${file.name}: no download URL.`);
@@ -240,34 +242,35 @@ export class PatreonService {
         }
 
         if (pending.attachmentFileNames.includes(file.name)) {
-          await this.browserService.uploadFileById(
-            "add-attachments-button",
-            fileContent,
-            file.name,
-            "application/octet-stream",
-            true,
-            targetTabId,
-          );
+          attachmentFiles.push({ content: fileContent, name: file.name });
         }
-
         if (pending.photoAttachmentFileNames.includes(file.name)) {
-          await this.browserService.clickButtonByInnerHtml(
-            "browse",
-            targetTabId,
-          );
-          await this.browserService.delay(1000);
-          await this.browserService.uploadFileById(
-            "photosInput",
-            fileContent,
-            file.name,
-            "image/png",
-            false,
-            targetTabId,
-          );
+          photoFiles.push({ content: fileContent, name: file.name });
         }
       } catch (error) {
         console.warn(`Skipping file ${file.name}: error during upload.`, error);
       }
+    }
+
+    if (attachmentFiles.length > 0) {
+      await this.browserService.uploadFileById(
+        "add-attachments-button",
+        attachmentFiles,
+        "application/octet-stream",
+        true,
+        targetTabId,
+      );
+    }
+    if (photoFiles.length > 0) {
+      await this.browserService.clickButtonByInnerHtml("browse", targetTabId);
+      await this.browserService.delay(1000);
+      await this.browserService.uploadFileById(
+        "photosInput",
+        photoFiles,
+        "image/png",
+        false,
+        targetTabId,
+      );
     }
 
     // Submit the post and confirm in Papoa
