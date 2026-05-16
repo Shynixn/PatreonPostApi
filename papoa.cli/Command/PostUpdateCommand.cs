@@ -85,6 +85,23 @@ public class PostUpdateCommand(IPostService postService, IFileUploadService file
                 content = await File.ReadAllTextAsync(contentFile);
             }
 
+            // Pre-encrypt files when a password is set so the size reported to the API
+            // matches the actual encrypted payload that will be uploaded.
+            var preparedFiles = new List<(string Path, byte[]? Bytes, long Size)>();
+            foreach (var path in addFiles)
+            {
+                if (!string.IsNullOrEmpty(password))
+                {
+                    var raw = await File.ReadAllBytesAsync(path);
+                    var enc = fileUploadService.Encrypt(raw, password);
+                    preparedFiles.Add((path, enc, enc.Length));
+                }
+                else
+                {
+                    preparedFiles.Add((path, null, new FileInfo(path).Length));
+                }
+            }
+
             var request = new PostUpdateRequest
             {
                 Id = id,
@@ -97,7 +114,7 @@ public class PostUpdateCommand(IPostService postService, IFileUploadService file
                 PublishDateUtc = publishDateUtc,
                 Tags = tags.Count > 0 ? tags : null,
                 PatreonPostId = patreonPostId,
-                AddFiles = addFiles.Select(e => new PostFile { Name = Path.GetFileName(e), Size = new FileInfo(e).Length }).ToList(),
+                AddFiles = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
                 RemoveFiles = removeFiles.Select(e => new PostFile { Name = Path.GetFileName(e) }).ToList(),
                 PhotoAttachmentFileNames = photoAttachmentFileNames.Count > 0 ? photoAttachmentFileNames : null,
                 AttachmentFileNames = attachmentFileNames.Count > 0 ? attachmentFileNames : null,
@@ -108,14 +125,17 @@ public class PostUpdateCommand(IPostService postService, IFileUploadService file
             for (var i = 0; i < updateResult.UploadUrls.Count; i++)
             {
                 var uploadSession = updateResult.UploadUrls[i];
-                var filePath = addFiles[i];
+                var (filePath, encryptedBytes, _) = preparedFiles[i];
 
                 if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
                 {
                     Console.WriteLine($"Uploading {filePath}...");
                 }
 
-                await fileUploadService.UploadFileAsync(uploadSession, filePath, password);
+                if (encryptedBytes is not null)
+                    await fileUploadService.UploadBytesAsync(uploadSession, encryptedBytes, Path.GetFileName(filePath));
+                else
+                    await fileUploadService.UploadFileAsync(uploadSession, filePath, null);
 
                 if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
                 {

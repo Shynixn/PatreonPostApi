@@ -20,19 +20,30 @@ public class FileUploadService(HttpClient httpClient) : IFileUploadService
     {
         var fileBytes = await File.ReadAllBytesAsync(filePath);
         var uploadBytes = password is not null ? Encrypt(fileBytes, password) : fileBytes;
+        await UploadBytesAsync(session, uploadBytes, Path.GetFileName(filePath));
+    }
 
+    public async Task UploadBytesAsync(PostUploadSession session, byte[] fileBytes, string fileName)
+    {
         using var content = new MultipartFormDataContent();
         foreach (var field in session.Fields)
         {
             content.Add(new StringContent(field.Value), field.Key);
         }
-        content.Add(new ByteArrayContent(uploadBytes), "file", Path.GetFileName(filePath));
+        content.Add(new ByteArrayContent(fileBytes), "file", fileName);
 
         var response = await httpClient.PostAsync(session.Url, content);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(
+                $"Response status code does not indicate success: {(int)response.StatusCode} ({response.ReasonPhrase}). Body: {body}",
+                null,
+                response.StatusCode);
+        }
     }
 
-    private static byte[] Encrypt(byte[] plaintext, string password)
+    public byte[] Encrypt(byte[] plaintext, string password)
     {
         var salt = RandomNumberGenerator.GetBytes(SaltSize);
         var key = Rfc2898DeriveBytes.Pbkdf2(password, salt, Pbkdf2Iterations, HashAlgorithmName.SHA256, KeySize);

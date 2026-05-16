@@ -182,6 +182,22 @@ public class InteractiveMode(
             password = AnsiConsole.Prompt(new TextPrompt<string>("Password:").Secret());
         }
 
+        // Pre-encrypt so the size sent to the API matches the uploaded payload.
+        var preparedFiles = new List<(string Path, byte[]? Bytes, long Size)>();
+        foreach (var path in addFiles)
+        {
+            if (password is not null)
+            {
+                var raw = await File.ReadAllBytesAsync(path);
+                var enc = fileUploadService.Encrypt(raw, password);
+                preparedFiles.Add((path, enc, enc.Length));
+            }
+            else
+            {
+                preparedFiles.Add((path, null, new FileInfo(path).Length));
+            }
+        }
+
         var request = new PostCreateRequest
         {
             Title = title,
@@ -191,7 +207,7 @@ public class InteractiveMode(
             TierNames = tierNames.Count > 0 ? tierNames : null,
             CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
             Encrypted = password != null,
-            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f), Size = new FileInfo(f).Length }).ToList(),
+            AddFiles = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
             AttachmentFileNames = addFiles.Count > 0 ? addFiles.Select(f => Path.GetFileName(f)).ToList() : null,
         };
 
@@ -213,7 +229,7 @@ public class InteractiveMode(
 
         if (result != null)
         {
-            await UploadFilesAsync(result.UploadUrls, addFiles, password);
+            await UploadFilesAsync(result.UploadUrls, preparedFiles);
             var post = result.Post;
             AnsiConsole.MarkupLine("[green]Post created![/]");
             AnsiConsole.MarkupLine($"  [bold]Id:[/]       {Markup.Escape(post.Id)}");
@@ -308,6 +324,22 @@ public class InteractiveMode(
             password = AnsiConsole.Prompt(new TextPrompt<string>("Password:").Secret());
         }
 
+        // Pre-encrypt so the size sent to the API matches the uploaded payload.
+        var preparedFiles = new List<(string Path, byte[]? Bytes, long Size)>();
+        foreach (var path in addFiles)
+        {
+            if (password is not null)
+            {
+                var raw = await File.ReadAllBytesAsync(path);
+                var enc = fileUploadService.Encrypt(raw, password);
+                preparedFiles.Add((path, enc, enc.Length));
+            }
+            else
+            {
+                preparedFiles.Add((path, null, new FileInfo(path).Length));
+            }
+        }
+
         var request = new PostUpdateRequest
         {
             Id = post.Id,
@@ -317,7 +349,7 @@ public class InteractiveMode(
             IsPublic = isPublic,
             TierNames = tierNames.Count > 0 ? tierNames : null,
             CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
-            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f), Size = new FileInfo(f).Length }).ToList(),
+            AddFiles = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
             RemoveFiles = removeFiles.Select(n => new PostFile { Name = n }).ToList(),
             AttachmentFileNames = addFiles.Count > 0 ? addFiles.Select(f => Path.GetFileName(f)).ToList() : null,
         };
@@ -340,7 +372,7 @@ public class InteractiveMode(
 
         if (result != null)
         {
-            await UploadFilesAsync(result.UploadUrls, addFiles, password);
+            await UploadFilesAsync(result.UploadUrls, preparedFiles);
             AnsiConsole.MarkupLine("[green]Post updated![/]");
         }
 
@@ -563,16 +595,21 @@ public class InteractiveMode(
         return selected;
     }
 
-    private async Task UploadFilesAsync(List<PostUploadSession> uploadUrls, List<string> filePaths, string? password)
+    private async Task UploadFilesAsync(
+        List<PostUploadSession> uploadUrls,
+        List<(string Path, byte[]? Bytes, long Size)> preparedFiles)
     {
         for (var i = 0; i < uploadUrls.Count; i++)
         {
             var session = uploadUrls[i];
-            var filePath = filePaths[i];
+            var (filePath, encryptedBytes, _) = preparedFiles[i];
             await AnsiConsole.Status()
                 .StartAsync($"Uploading [cyan1]{Markup.Escape(Path.GetFileName(filePath))}[/]...", async _ =>
                 {
-                    await fileUploadService.UploadFileAsync(session, filePath, password);
+                    if (encryptedBytes is not null)
+                        await fileUploadService.UploadBytesAsync(session, encryptedBytes, Path.GetFileName(filePath));
+                    else
+                        await fileUploadService.UploadFileAsync(session, filePath, null);
                 });
             AnsiConsole.MarkupLine($"  Uploaded [cyan1]{Markup.Escape(Path.GetFileName(filePath))}[/].");
         }

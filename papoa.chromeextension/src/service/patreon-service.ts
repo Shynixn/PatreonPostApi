@@ -248,7 +248,13 @@ export class PatreonService {
           photoFiles.push({ content: fileContent, name: file.name });
         }
       } catch (error) {
-        console.warn(`Skipping file ${file.name}: error during upload.`, error);
+        if (post.encrypted) {
+          throw new Error(
+            `Error processing file ${file.name}: ${error}. Make sure the password is correct to decrypt the file.`,
+          );
+        } else {
+          throw new Error(`Error processing file ${file.name}: ${error}. `);
+        }
       }
     }
 
