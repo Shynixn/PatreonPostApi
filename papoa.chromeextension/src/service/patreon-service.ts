@@ -73,7 +73,11 @@ export class PatreonService {
       ? await this.browserService.navigateTabTo(tabId, patreonUrl)
       : await this.browserService.navigateActiveTabTo(patreonUrl);
     await this.browserService.delay(5000);
-    await this.resetPatreonPost(patreonUrl, post, targetTabId);
+
+    if (isEditingExistingPost) {
+      // If editing an existing post, we need to reset the form first to ensure the pending changes are correctly applied
+      await this.resetPatreonPost(patreonUrl, post, targetTabId);
+    }
 
     // ################# START #####################
 
@@ -114,45 +118,56 @@ export class PatreonService {
       this.browserService.clickElementByAttribute("value", "paid", targetTabId);
 
       // Select Specific Tiers
-      await this.browserService.delay(1000);
-      await this.browserService.clickElementByAttribute(
-        "aria-label",
-        "Select tiers",
-        targetTabId,
-      );
-
-      for (const tierName of pending.tierNames) {
+      if (pending.tierNames.length > 0) {
         await this.browserService.delay(1000);
         await this.browserService.clickElementByAttribute(
           "aria-label",
-          tierName,
+          "Select tiers",
           targetTabId,
         );
+
+        await this.browserService.delay(1000);
+        await this.browserService.clickElementByAttribute(
+          "aria-label",
+          "Select all tiers",
+          targetTabId,
+        );
+
+        for (const tierName of pending.tierNames) {
+          await this.browserService.delay(1000);
+          await this.browserService.clickElementByAttribute(
+            "aria-label",
+            tierName,
+            targetTabId,
+          );
+        }
       }
     }
 
     // Select Collections
-    await this.browserService.delay(1000);
-    await this.browserService.clickElementByAttribute(
-      "aria-label",
-      "Icon indicating the dropdown can be expanded to display a creator's collections",
-      targetTabId,
-    );
-    await this.browserService.delay(1000);
-    for (const collectionName of pending.collectionNames) {
+    if (pending.collectionNames.length > 0) {
       await this.browserService.delay(1000);
       await this.browserService.clickElementByAttribute(
         "aria-label",
-        collectionName,
+        "Icon indicating the dropdown can be expanded to display a creator's collections",
+        targetTabId,
+      );
+      await this.browserService.delay(1000);
+      for (const collectionName of pending.collectionNames) {
+        await this.browserService.delay(1000);
+        await this.browserService.clickElementByAttribute(
+          "aria-label",
+          collectionName,
+          targetTabId,
+        );
+      }
+      await this.browserService.delay(1000);
+      await this.browserService.clickElementByAttribute(
+        "aria-label",
+        "Icon indicating the dropdown can be expanded to display a creator's collections",
         targetTabId,
       );
     }
-    await this.browserService.delay(1000);
-    await this.browserService.clickElementByAttribute(
-      "aria-label",
-      "Icon indicating the dropdown can be expanded to display a creator's collections",
-      targetTabId,
-    );
 
     // Publish Date
     if (pending.publishDateUtc != null) {
