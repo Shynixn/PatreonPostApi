@@ -485,8 +485,9 @@ export class BrowserService {
           'input[type="checkbox"]',
         );
         checkboxes.forEach((checkbox) => {
-          checkbox.checked = false;
-          checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+          if (checkbox.checked) {
+            checkbox.click();
+          }
         });
       },
       args: [],

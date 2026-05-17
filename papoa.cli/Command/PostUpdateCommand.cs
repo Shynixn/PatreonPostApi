@@ -19,7 +19,6 @@ public class PostUpdateCommand(IPostService postService, IPrintingService printi
         var contentFormatOption = new Option<string>("--content-format")
         {
             Required = false,
-            DefaultValueFactory = _ => "text/plain",
         };
         contentFormatOption.AcceptOnlyFromAmong("text/plain", "text/markdown");
         var contentFileOption = new Option<string>("--content-file") { Required = false };
@@ -55,7 +54,7 @@ public class PostUpdateCommand(IPostService postService, IPrintingService printi
             var id = parseResult.GetValue(idOption)!;
             var title = parseResult.GetValue(titleOption)!;
             var content = parseResult.GetValue(contentOption);
-            var contentFormat = parseResult.GetValue(contentFormatOption)!;
+            var contentFormat = parseResult.GetValue(contentFormatOption);
             var isPublic = parseResult.GetValue(isPublicOption);
             var tierNames = parseResult.GetValue(tierNamesOption) ?? [];
             var collectionNames = parseResult.GetValue(collectionNamesOption) ?? [];

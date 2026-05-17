@@ -160,16 +160,21 @@ papoa post create \
   --title "Full Post" \
   --content-file ./papoa.resources/post.md \
   --content-format text/markdown \
-  --is-public \
-  --tier-name "Gold" \
+  --tier-name "Silver" \
   --collection-name "Dev Log" \
   --tag release \
   --tag v2 \
-  --ttl-days 30 \
+  --ttl-days 1 \
   --publish-date-utc "2026-06-01T12:00:00Z" \
+  --file ./papoa.resources/post.md \
   --file ./papoa.resources/icon.png \
+  --file ./papoa.resources/papoa-chan.png \
   --photo-attachment-file-name "icon.png" \
-  --password "strongpass"
+  --photo-attachment-file-name "papoa-chan.png" \
+  --attachment-file-name "post.md" \
+  --attachment-file-name "icon.png" \
+  --attachment-file-name "papoa-chan.png" \
+  --password "1234"
 ```
 
 **Expected:** Post created with all fields populated. File encrypted and uploaded. Output printed.
@@ -215,7 +220,7 @@ Update only changes metadata (title, content, visibility, tiers, collections, ta
 ### TC-UPDATE-01 — Minimal required options (id and title)
 
 ```bash
-papoa post update --id "abc123" --title "Updated Title"
+papoa post update --id "abc123" --title "Updated Title" --status "pending"
 ```
 
 **Expected:** Post metadata updated. Output shows new title and other preserved fields.
@@ -225,7 +230,7 @@ papoa post update --id "abc123" --title "Updated Title"
 ### TC-UPDATE-02 — Update content inline
 
 ```bash
-papoa post update --id "abc123" --title "Updated Title" --content "New body content."
+papoa post update --id "abc123" --title "Updated Title" --content "New body content." --status "pending"
 ```
 
 **Expected:** Post body replaced with the new inline content.
@@ -235,7 +240,7 @@ papoa post update --id "abc123" --title "Updated Title" --content "New body cont
 ### TC-UPDATE-03 — Update content from file
 
 ```bash
-papoa post update --id "abc123" --title "Updated Title" --content-file updated.md --content-format text/markdown
+papoa post update --id "abc123" --title "Updated Title" --content-file updated.md --content-format text/markdown --status "pending"
 ```
 
 **Expected:** File content replaces the body. Markdown format applied.
@@ -245,7 +250,7 @@ papoa post update --id "abc123" --title "Updated Title" --content-file updated.m
 ### TC-UPDATE-04 — Change visibility to public
 
 ```bash
-papoa post update --id "abc123" --title "Now Public" --is-public
+papoa post update --id "abc123" --title "Now Public" --is-public --status "pending"
 ```
 
 **Expected:** `Is Public: True` in output.
@@ -255,7 +260,7 @@ papoa post update --id "abc123" --title "Now Public" --is-public
 ### TC-UPDATE-05 — Update tier assignments
 
 ```bash
-papoa post update --id "abc123" --title "The Gold One" --tier-name "Platinum Tier"
+papoa post update --id "abc123" --title "The Gold One" --tier-name "Platinum Tier" --status "pending"
 ```
 
 **Expected:** Tiers replaced with `["Platinum Tier"]`.
@@ -266,7 +271,7 @@ papoa post update --id "abc123" --title "The Gold One" --tier-name "Platinum Tie
 
 ```bash
 papoa post update --id "abc123" --title "New Collections" \
-  --collection-name "Announcements" --collection-name "Changelog"
+  --collection-name "Announcements" --collection-name "Changelog" --status "pending"
 ```
 
 **Expected:** Collections updated.
@@ -276,7 +281,7 @@ papoa post update --id "abc123" --title "New Collections" \
 ### TC-UPDATE-07 — Update tags
 
 ```bash
-papoa post update --id "abc123" --title "New Tags" --tag updated --tag v3
+papoa post update --id "abc123" --title "New Tags" --tag updated --tag v3 --status "pending"
 ```
 
 **Expected:** Tags updated.
@@ -296,7 +301,7 @@ papoa post update --id "abc123" --title "My Post" --status published
 ### TC-UPDATE-09 — Set Patreon post ID
 
 ```bash
-papoa post update --id "abc123" --title "With Patreon ID" --patreon-post-id "12345678"
+papoa post update --id "abc123" --title "With Patreon ID" --patreon-post-id "12345678" --status "pending"
 ```
 
 **Expected:** `Patreon Updated At` field populated in output.
@@ -315,7 +320,8 @@ papoa post update --id "abc123" \
   --collection-name "Dev Log" \
   --tag v3 \
   --status published \
-  --patreon-post-id "12345678"
+  --patreon-post-id "12345678" \
+  --status "pending"
 ```
 
 **Expected:** All metadata fields updated. Status set to published.
@@ -325,7 +331,7 @@ papoa post update --id "abc123" \
 ### TC-UPDATE-11 — Missing required `--id`
 
 ```bash
-papoa post update --title "No ID"
+papoa post update --title "No ID" --status "pending"
 ```
 
 **Expected:** CLI reports `--id` is required. Non-zero exit code.
@@ -335,7 +341,7 @@ papoa post update --title "No ID"
 ### TC-UPDATE-12 — Missing required `--title`
 
 ```bash
-papoa post update --id "abc123"
+papoa post update --id "abc123" --status "pending"
 ```
 
 **Expected:** CLI reports `--title` is required. Non-zero exit code.
@@ -345,7 +351,7 @@ papoa post update --id "abc123"
 ### TC-UPDATE-13 — Non-existent post ID
 
 ```bash
-papoa post update --id "does-not-exist" --title "Ghost Post"
+papoa post update --id "does-not-exist" --title "Ghost Post" --status "pending"
 ```
 
 **Expected:** API returns an error (e.g., 404). CLI surfaces the error message.
@@ -355,7 +361,7 @@ papoa post update --id "does-not-exist" --title "Ghost Post"
 ### TC-UPDATE-14 — Invalid `--content-format`
 
 ```bash
-papoa post update --id "abc123" --title "Bad Format" --content-format application/json
+papoa post update --id "abc123" --title "Bad Format" --content-format application/json --status "pending"
 ```
 
 **Expected:** CLI rejects the value. Allowed: `text/plain`, `text/markdown`.

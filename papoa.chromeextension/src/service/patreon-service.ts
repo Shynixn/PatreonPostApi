@@ -170,7 +170,7 @@ export class PatreonService {
     }
 
     // Publish Date
-    if (post.publishDateUtc != null) {
+    if (post.publishDateUtc != null && !isEditingExistingPost) {
       await this.browserService.delay(1000);
       await this.browserService.clickElementById(
         "scheduled-for-toggle",
@@ -214,84 +214,95 @@ export class PatreonService {
     }
 
     // File Uploads
-    const postWithUrls = await this.postService.getPostWithDownloadUrls(
-      post.id,
-    );
-    const filesToUpload = postWithUrls.files ?? [];
-    const attachmentFiles: Array<{ content: ArrayBuffer; name: string }> = [];
-    const photoFiles: Array<{ content: ArrayBuffer; name: string }> = [];
-    for (const file of filesToUpload) {
-      if (!file.url) {
-        console.warn(`Skipping file ${file.name}: no download URL.`);
-        continue;
-      }
-      try {
-        const response = await fetch(file.url);
-        if (!response.ok) {
-          console.warn(
-            `Skipping file ${file.name}: fetch failed (${response.status}).`,
-          );
+    if (!isEditingExistingPost) {
+      const postWithUrls = await this.postService.getPostWithDownloadUrls(
+        post.id,
+      );
+      const filesToUpload = postWithUrls.files ?? [];
+      const attachmentFiles: Array<{ content: ArrayBuffer; name: string }> = [];
+      const photoFiles: Array<{ content: ArrayBuffer; name: string }> = [];
+      for (const file of filesToUpload) {
+        if (!file.url) {
+          console.warn(`Skipping file ${file.name}: no download URL.`);
           continue;
         }
-        let fileContent = await response.arrayBuffer();
-        if (post.encrypted && this.password) {
-          fileContent = await this.cryptoService.decryptBytes(
-            fileContent,
-            this.password,
-          );
-        }
+        try {
+          const response = await fetch(file.url);
+          if (!response.ok) {
+            console.warn(
+              `Skipping file ${file.name}: fetch failed (${response.status}).`,
+            );
+            continue;
+          }
+          let fileContent = await response.arrayBuffer();
+          if (post.encrypted && this.password) {
+            fileContent = await this.cryptoService.decryptBytes(
+              fileContent,
+              this.password,
+            );
+          }
 
-        if ((post.attachmentFileNames ?? []).includes(file.name)) {
-          attachmentFiles.push({ content: fileContent, name: file.name });
-        }
-        if (post.photoAttachmentFileNames.includes(file.name)) {
-          photoFiles.push({ content: fileContent, name: file.name });
-        }
-      } catch (error) {
-        if (post.encrypted) {
-          throw new Error(
-            `Error processing file ${file.name}: ${error}. Make sure the password is correct to decrypt the file.`,
-          );
-        } else {
-          throw new Error(`Error processing file ${file.name}: ${error}. `);
+          if ((post.attachmentFileNames ?? []).includes(file.name)) {
+            attachmentFiles.push({ content: fileContent, name: file.name });
+          }
+          if (post.photoAttachmentFileNames.includes(file.name)) {
+            photoFiles.push({ content: fileContent, name: file.name });
+          }
+        } catch (error) {
+          if (post.encrypted) {
+            throw new Error(
+              `Error processing file ${file.name}: ${error}. Make sure the password is correct to decrypt the file.`,
+            );
+          } else {
+            throw new Error(`Error processing file ${file.name}: ${error}. `);
+          }
         }
       }
-    }
 
-    if (attachmentFiles.length > 0) {
-      await this.browserService.uploadFileById(
-        "add-attachments-button",
-        attachmentFiles,
-        "application/octet-stream",
-        true,
-        targetTabId,
-      );
-    }
-    if (photoFiles.length > 0) {
-      await this.browserService.clickButtonByInnerHtml("browse", targetTabId);
-      await this.browserService.delay(1000);
-      await this.browserService.uploadFileById(
-        "photosInput",
-        photoFiles,
-        "image/png",
-        false,
-        targetTabId,
-      );
+      if (attachmentFiles.length > 0) {
+        await this.browserService.uploadFileById(
+          "add-attachments-button",
+          attachmentFiles,
+          "application/octet-stream",
+          true,
+          targetTabId,
+        );
+      }
+      if (photoFiles.length > 0) {
+        await this.browserService.clickButtonByInnerHtml("browse", targetTabId);
+        await this.browserService.delay(1000);
+        await this.browserService.uploadFileById(
+          "photosInput",
+          photoFiles,
+          "image/png",
+          false,
+          targetTabId,
+        );
+      }
     }
 
     // Submit the post and confirm in Papoa
     if (autoSubmit) {
       await this.browserService.delay(1000);
-      await this.browserService.clickElementByAttribute(
-        "data-tag",
-        "make-a-post-action-publish",
-        targetTabId,
-      );
-      await this.browserService.clickElementByAttribute(
-        "data-tag",
-        "make-a-post-action-schedule_post",
-        targetTabId,
-      );
+      if (isEditingExistingPost) {
+        await this.browserService.clickElementByAttribute(
+          "data-tag",
+          "make-a-post-action-save_without_notifying",
+          targetTabId,
+        );
+      } else if (post.publishDateUtc != null) {
+        await this.browserService.clickElementByAttribute(
+          "data-tag",
+          "make-a-post-action-schedule_post",
+          targetTabId,
+        );
+      } else {
+        await this.browserService.clickElementByAttribute(
+          "data-tag",
+          "make-a-post-action-publish",
+          targetTabId,
+        );
+      }
       await this.browserService.delay(10000);
     }
 
