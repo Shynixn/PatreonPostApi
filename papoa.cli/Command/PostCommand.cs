@@ -12,7 +12,7 @@ public class PostCommand(IPostService postService, IFileUploadService fileUpload
     {
         var command = new System.CommandLine.Command("post", "Manage posts");
         command.Add(new PostCreateCommand(postService, fileUploadService, printingService).Build());
-        command.Add(new PostUpdateCommand(postService, fileUploadService, printingService).Build());
+        command.Add(new PostUpdateCommand(postService, printingService).Build());
         command.Add(new PostDeleteCommand(postService).Build());
         command.Add(new PostListCommand(postService, printingService).Build());
         return command;

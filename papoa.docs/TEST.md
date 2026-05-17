@@ -115,7 +115,7 @@ papoa post create --title "Expiring Post" --ttl-days 7
 
 ```bash
 papoa post create --title "File Post" \
-  --add-file ./papoa.resources/icon.png \
+  --file ./papoa.resources/icon.png \
   --photo-attachment-file-name "icon.png"
 ```
 
@@ -127,9 +127,9 @@ papoa post create --title "File Post" \
 
 ```bash
 papoa post create --title "Multi File Post" \
-  --add-file ./papoa.resources/icon.png \
-  --add-file ./papoa.resources/post.md \
-  --add-file ./papoa.resources/papoa-chan.png \
+  --file ./papoa.resources/icon.png \
+  --file ./papoa.resources/post.md \
+  --file ./papoa.resources/papoa-chan.png \
   --photo-attachment-file-name "icon.png" \
   --photo-attachment-file-name "papoa-chan.png" \
   --attachment-file-name "post.md" \
@@ -144,7 +144,7 @@ papoa post create --title "Multi File Post" \
 
 ```bash
 papoa post create --title "Encrypted Post" \
-  --add-file ./papoa.resources/post.md \
+  --file ./papoa.resources/post.md \
   --attachment-file-name "post.md" \
   --password "1234"
 ```
@@ -157,7 +157,7 @@ papoa post create --title "Encrypted Post" \
 
 ```bash
 papoa post create --title "Photo Post" \
-  --add-file ./papoa.resources/icon.png \
+  --file ./papoa.resources/icon.png \
   --photo-attachment-file-name "icon.png"
 ```
 
@@ -169,7 +169,7 @@ papoa post create --title "Photo Post" \
 
 ```bash
 papoa post create --title "Attachment Post" \
-  --add-file /path/to/doc.pdf \
+  --file /path/to/doc.pdf \
   --attachment-file-name "doc.pdf"
 ```
 
@@ -191,7 +191,7 @@ papoa post create \
   --tag v2 \
   --ttl-days 30 \
   --publish-date-utc "2026-06-01T12:00:00Z" \
-  --add-file ./papoa.resources/icon.png \
+  --file ./papoa.resources/icon.png \
   --photo-attachment-file-name "icon.png" \
   --password "strongpass"
 ```
@@ -234,13 +234,15 @@ papoa post create --title "Missing File" --content-file /nonexistent/post.md
 
 ## 2. `post update`
 
+Update only changes metadata (title, content, visibility, tiers, collections, tags). File attachments cannot be modified after creation.
+
 ### TC-UPDATE-01 — Minimal required options (id and title)
 
 ```bash
 papoa post update --id "abc123" --title "Updated Title"
 ```
 
-**Expected:** Post updated. Output shows new title and other preserved fields.
+**Expected:** Post metadata updated. Output shows new title and other preserved fields.
 
 ---
 
@@ -280,7 +282,7 @@ papoa post update --id "abc123" --title "Now Public" --is-public
 papoa post update --id "abc123" --title "The Gold One" --tier-name "Platinum Tier"
 ```
 
-**Expected:** Tiers replaced with `["Platinum"]`.
+**Expected:** Tiers replaced with `["Platinum Tier"]`.
 
 ---
 
@@ -305,85 +307,27 @@ papoa post update --id "abc123" --title "New Tags" --tag updated --tag v3
 
 ---
 
-### TC-UPDATE-08 — Reschedule publish date
+### TC-UPDATE-08 — Mark post as published
 
 ```bash
-papoa post update --id "abc123" --title "Rescheduled" --publish-date-utc "2027-01-01T00:00:00Z"
+papoa post update --id "abc123" --title "My Post" --status published
 ```
 
-**Expected:** Publish date updated.
+**Expected:** Post status set to `published`. Output shows `Status: published`.
 
 ---
 
-### TC-UPDATE-09 — Clear publish date
+### TC-UPDATE-09 — Set Patreon post ID
 
 ```bash
-papoa post update --id "abc123" --title "Cleared Date" --publish-date-utc ""
-```
-
-**Expected:** Publish date set to null (empty string is treated as unset by the implementation).
-
----
-
-### TC-UPDATE-10 — Add a new file without encryption
-
-```bash
-papoa post update --id "abc123" --title "Add File" \
-  --add-file ./papoa.resources/icon.png \
-  --photo-attachment-file-name "icon.png"
-```
-
-**Expected:** New file uploaded and added to post.
-
----
-
-### TC-UPDATE-11 — Remove an existing file
-
-```bash
-papoa post update --id "abc123" --title "Remove File" --remove-file "icon.png"
-```
-
-**Expected:** `icon.png` removed from post files.
-
----
-
-### TC-UPDATE-12 — Add and remove files in a single call
-
-```bash
-papoa post update --id "abc123" --title "Swap Files" \
-  --add-file ./papoa.resources/icon.png \
-  --photo-attachment-file-name "icon.png" \
-  --remove-file "icon.png"
-```
-
-**Expected:** New file added, old file removed. Both operations reflected in output.
-
----
-
-### TC-UPDATE-13 — Add file with encryption
-
-```bash
-papoa post update --id "abc123" --title "Encrypted Update" \
-  --add-file /path/to/doc.zip \
-  --attachment-file-name "doc.zip" \
-  --password "update-secret"
-```
-
-**Expected:** File encrypted with AES-256-CBC before upload.
-
----
-
-### TC-UPDATE-14 — Set Patreon post ID
-
-```bash
-papoa post update --id "abc123" --title "With Patreon ID" --patreon-post-id "patreon-xyz"
+papoa post update --id "abc123" --title "With Patreon ID" --patreon-post-id "12345678"
 ```
 
 **Expected:** `Patreon Updated At` field populated in output.
 
 ---
 
-### TC-UPDATE-15 — Full combination
+### TC-UPDATE-10 — Full combination
 
 ```bash
 papoa post update --id "abc123" \
@@ -394,19 +338,15 @@ papoa post update --id "abc123" \
   --tier-name "Gold" \
   --collection-name "Dev Log" \
   --tag v3 \
-  --publish-date-utc "2027-06-01T00:00:00Z" \
-  --add-file ./papoa.resources/icon.png \
-  --remove-file "icon.png" \
-  --photo-attachment-file-name "icon.png" \
-  --patreon-post-id "patreon-xyz" \
-  --password "strongpass"
+  --status published \
+  --patreon-post-id "12345678"
 ```
 
-**Expected:** All fields updated. File encrypted and uploaded. Old file removed.
+**Expected:** All metadata fields updated. Status set to published.
 
 ---
 
-### TC-UPDATE-16 — Missing required `--id`
+### TC-UPDATE-11 — Missing required `--id`
 
 ```bash
 papoa post update --title "No ID"
@@ -416,7 +356,7 @@ papoa post update --title "No ID"
 
 ---
 
-### TC-UPDATE-17 — Missing required `--title`
+### TC-UPDATE-12 — Missing required `--title`
 
 ```bash
 papoa post update --id "abc123"
@@ -426,7 +366,7 @@ papoa post update --id "abc123"
 
 ---
 
-### TC-UPDATE-18 — Non-existent post ID
+### TC-UPDATE-13 — Non-existent post ID
 
 ```bash
 papoa post update --id "does-not-exist" --title "Ghost Post"
@@ -436,13 +376,23 @@ papoa post update --id "does-not-exist" --title "Ghost Post"
 
 ---
 
-### TC-UPDATE-19 — Invalid `--content-format`
+### TC-UPDATE-14 — Invalid `--content-format`
 
 ```bash
 papoa post update --id "abc123" --title "Bad Format" --content-format application/json
 ```
 
 **Expected:** CLI rejects the value. Allowed: `text/plain`, `text/markdown`.
+
+---
+
+### TC-UPDATE-15 — Invalid `--status`
+
+```bash
+papoa post update --id "abc123" --title "Bad Status" --status draft
+```
+
+**Expected:** CLI rejects the value. Allowed: `pending`, `published`.
 
 ---
 
@@ -534,23 +484,23 @@ papoa post list
 
 ---
 
-### TC-LIST-04 — Post with pending changes shows pending values
+### TC-LIST-04 — Post with pending status shows status column
 
 ```bash
 papoa post list --id "abc123"
 ```
 
-**Expected:** Fields with pending changes display both the current and the pending value (as formatted by `printingService.StringProp`).
+**Expected:** `Status: pending` shown in output for a post that has not been confirmed yet.
 
 ---
 
-### TC-LIST-05 — Post with pending file changes
+### TC-LIST-05 — Published post shows published status
 
 ```bash
 papoa post list --id "abc123"
 ```
 
-**Expected:** `Files` field reflects both existing files and any pending adds/removes (as formatted by `printingService.FilesProp`).
+**Expected:** `Status: published` shown in output for a post that has been confirmed.
 
 ---
 

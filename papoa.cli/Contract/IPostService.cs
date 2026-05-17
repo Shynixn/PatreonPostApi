@@ -10,7 +10,7 @@ public interface IPostService
     Task<PostCreateResult> CreatePostAsync(PostCreateRequest request);
 
     /// <summary>
-    /// Updates an existing post and returns the result, including any upload sessions.
+    /// Updates an existing post and returns the result.
     /// </summary>
     Task<PostUpdateResult> UpdatePostAsync(PostUpdateRequest request);
 

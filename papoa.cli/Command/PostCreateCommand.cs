@@ -28,7 +28,7 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
         var publishDateUtcOption = new Option<string?>("--publish-date-utc") { Required = false };
         var tagsOption = new Option<List<string>>("--tag") { Required = false };
         var ttlDaysOption = new Option<int?>("--ttl-days") { Required = false };
-        var addFilesOption = new Option<List<string>>("--add-file") { Required = false };
+        var addFilesOption = new Option<List<string>>("--file") { Required = false };
         var photoAttachmentFileNamesOption = new Option<List<string>>("--photo-attachment-file-name") { Required = false };
         var attachmentFileNamesOption = new Option<List<string>>("--attachment-file-name") { Required = false };
         var passwordOption = new Option<string?>("--password") { Required = false };
@@ -107,7 +107,7 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
                 Tags = tags.Count > 0 ? tags : null,
                 TtlDays = ttlDays,
                 Encrypted = !string.IsNullOrEmpty(password),
-                AddFiles = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
+                Files = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
                 PhotoAttachmentFileNames = photoAttachmentFileNames.Count > 0 ? photoAttachmentFileNames : null,
                 AttachmentFileNames = attachmentFileNames.Count > 0 ? attachmentFileNames : null,
             };
@@ -140,13 +140,13 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
                 var post = createResult.Post;
                 Console.WriteLine("Post Created");
                 Console.WriteLine($"  Id:               {post.Id}");
-                Console.WriteLine($"  Title:            {printingService.StringProp(post.Title, post.Pending?.Title)}");
-                Console.WriteLine($"  Content:          {printingService.StringProp(post.Content, post.Pending?.Content)}");
+                Console.WriteLine($"  Title:            {post.Title}");
+                Console.WriteLine($"  Content:          {post.Content}");
                 Console.WriteLine($"  Is Public:        {post.IsPublic}");
                 Console.WriteLine($"  Tier Names:       {string.Join(", ", post.TierNames)}");
                 Console.WriteLine($"  Collection Names: {string.Join(", ", post.CollectionNames)}");
                 Console.WriteLine($"  Tags:             {string.Join(", ", post.Tags)}");
-                Console.WriteLine($"  Files:            {printingService.FilesProp(post.Files, post.Pending?.AddFiles, post.Pending?.RemoveFiles)}");
+                Console.WriteLine($"  Files:            {printingService.FilesProp(post.Files)}");
                 Console.WriteLine($"  Created At:       {post.CreatedAt}");
             }
         });

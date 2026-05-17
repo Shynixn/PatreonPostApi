@@ -227,6 +227,26 @@ For this first test post, **leave both Background fetch and Auto-submit disabled
 For the full CLI command reference, see the [CLI documentation](papoa.docs/CLI.md).
 For the REST API reference used by the CLI (and for building your own integrations), see the [API documentation](papoa.docs/API.md).
 
+## Questions and Answers
+
+**How long do I have to publish the post after sending it to Papoa?**
+
+You have **24 hours**. After that, any files attached to the post are permanently deleted from Papoa. The post metadata may remain accessible depending on your TTL setting, but the uploaded files are gone. Make sure the Chrome extension processes the post promptly after creation.
+
+---
+
+**How long can I update a post?**
+
+The default TTL (time-to-live) for post metadata in Papoa is **30 days**. You can reduce this to as few as **1 day** or extend it to up to **90 days** using the `--ttl-days` option on `post create`. Within the TTL window you can update metadata — visibility, tiers, tags, content — but you cannot change the attached files. Those are fixed at creation time.
+
+---
+
+**What if patreon.com updates their website? Will this extension break?**
+
+Yes, expect it to break in the future, potentially multiple times. Patreon can change their page structure, element names, or interaction flows at any time, and the Chrome extension relies on those details to automate the form. When that happens, wait until this app is updated, download the new files, and rerun your post. **Do not enable Auto-submit if your business depends on reliable automation** — instead, review the filled-in draft manually and click **Post** yourself.
+
+---
+
 ## Limits
 
 This service does not support all functionalities of patreon.com web editor. Please test your use case using the free tier and submit feature requests by Github Issues. You can update the 1 free post per month multiple times and test different automation use cases. If you delete your post, you are going to loose access to it.

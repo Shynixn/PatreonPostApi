@@ -87,6 +87,7 @@ public class InteractiveMode(
             .BorderColor(Color.Grey)
             .AddColumn(new TableColumn("[bold]Id[/]"))
             .AddColumn(new TableColumn("[bold]Title[/]"))
+            .AddColumn(new TableColumn("[bold]Status[/]"))
             .AddColumn(new TableColumn("[bold]Content[/]"))
             .AddColumn(new TableColumn("[bold]Public[/]"))
             .AddColumn(new TableColumn("[bold]Tiers[/]"))
@@ -98,11 +99,12 @@ public class InteractiveMode(
         {
             table.AddRow(
                 new Text(post.Id),
-                new Text(printingService.StringProp(post.Title, post.Pending?.Title)),
-                new Text(Truncate(printingService.StringProp(post.Content, post.Pending?.Content), 50)),
+                new Text(post.Title),
+                new Markup(post.Status == "published" ? "[green]published[/]" : "[yellow]pending[/]"),
+                new Text(Truncate(post.Content, 50)),
                 new Text(post.IsPublic ? "Yes" : "No"),
                 new Text(string.Join(", ", post.TierNames)),
-                new Text(printingService.FilesProp(post.Files, post.Pending?.AddFiles, post.Pending?.RemoveFiles)),
+                new Text(printingService.FilesProp(post.Files)),
                 new Text(post.CreatedAt),
                 new Text(post.PatreonUpdatedAt ?? "-"));
         }
@@ -207,7 +209,7 @@ public class InteractiveMode(
             TierNames = tierNames.Count > 0 ? tierNames : null,
             CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
             Encrypted = password != null,
-            AddFiles = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
+            Files = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
             AttachmentFileNames = addFiles.Count > 0 ? addFiles.Select(f => Path.GetFileName(f)).ToList() : null,
         };
 
@@ -233,7 +235,7 @@ public class InteractiveMode(
             var post = result.Post;
             AnsiConsole.MarkupLine("[green]Post created![/]");
             AnsiConsole.MarkupLine($"  [bold]Id:[/]       {Markup.Escape(post.Id)}");
-            AnsiConsole.MarkupLine($"  [bold]Title:[/]    {Markup.Escape(printingService.StringProp(post.Title, post.Pending?.Title))}");
+            AnsiConsole.MarkupLine($"  [bold]Title:[/]    {Markup.Escape(post.Title)}");
             AnsiConsole.MarkupLine($"  [bold]Public:[/]   {(post.IsPublic ? "Yes" : "No")}");
             if (post.TierNames.Count > 0)
                 AnsiConsole.MarkupLine($"  [bold]Tiers:[/]    {Markup.Escape(string.Join(", ", post.TierNames))}");
@@ -314,30 +316,10 @@ public class InteractiveMode(
         AnsiConsole.MarkupLine($"[grey]Current collection names: {(post.CollectionNames.Count > 0 ? string.Join(", ", post.CollectionNames) : "none")}[/]");
         var collectionNames = PromptForStringList("Collection names [grey](collections this post belongs to)[/]");
 
-        var addFiles = BrowseForFiles("Add files to attach:");
-
-        var removeFiles = PromptForRemoveFiles();
-
-        string? password = null;
-        if (AnsiConsole.Confirm("Encrypt with password?", defaultValue: false))
+        string? status = null;
+        if (AnsiConsole.Confirm("Mark as published (confirm post)?", defaultValue: false))
         {
-            password = AnsiConsole.Prompt(new TextPrompt<string>("Password:").Secret());
-        }
-
-        // Pre-encrypt so the size sent to the API matches the uploaded payload.
-        var preparedFiles = new List<(string Path, byte[]? Bytes, long Size)>();
-        foreach (var path in addFiles)
-        {
-            if (password is not null)
-            {
-                var raw = await File.ReadAllBytesAsync(path);
-                var enc = fileUploadService.Encrypt(raw, password);
-                preparedFiles.Add((path, enc, enc.Length));
-            }
-            else
-            {
-                preparedFiles.Add((path, null, new FileInfo(path).Length));
-            }
+            status = "published";
         }
 
         var request = new PostUpdateRequest
@@ -349,9 +331,7 @@ public class InteractiveMode(
             IsPublic = isPublic,
             TierNames = tierNames.Count > 0 ? tierNames : null,
             CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
-            AddFiles = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
-            RemoveFiles = removeFiles.Select(n => new PostFile { Name = n }).ToList(),
-            AttachmentFileNames = addFiles.Count > 0 ? addFiles.Select(f => Path.GetFileName(f)).ToList() : null,
+            Status = status,
         };
 
         PostUpdateResult? result = null;
@@ -372,7 +352,6 @@ public class InteractiveMode(
 
         if (result != null)
         {
-            await UploadFilesAsync(result.UploadUrls, preparedFiles);
             AnsiConsole.MarkupLine("[green]Post updated![/]");
         }
 
@@ -475,38 +454,6 @@ public class InteractiveMode(
         }
 
         return items;
-    }
-
-    /// <summary>
-    /// Text-input loop for entering filenames to remove. Enter a blank line to finish.
-    /// </summary>
-    private static List<string> PromptForRemoveFiles()
-    {
-        var files = new List<string>();
-        AnsiConsole.MarkupLine("[bold]Remove files[/] [grey](enter filename to remove, leave blank to finish)[/]");
-
-        while (true)
-        {
-            var name = AnsiConsole.Prompt(
-                new TextPrompt<string>("Filename to remove [grey](blank = done)[/]:")
-                    .AllowEmpty());
-
-            if (string.IsNullOrWhiteSpace(name))
-                break;
-
-            var trimmed = name.Trim();
-            if (files.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
-            {
-                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(trimmed)} already added to removal list.[/]");
-            }
-            else
-            {
-                files.Add(trimmed);
-                AnsiConsole.MarkupLine($"[red]Will remove:[/] {Markup.Escape(trimmed)}");
-            }
-        }
-
-        return files;
     }
 
     /// <summary>

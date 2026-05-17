@@ -68,6 +68,7 @@ Upload by sending a `multipart/form-data` `POST` to `url` including all `fields`
   "id": "abc123",
   "title": "My Post",
   "content": "Hello world",
+  "status": "pending",
   "contentFormat": "text/plain",
   "files": [],
   "encrypted": false,
@@ -76,7 +77,8 @@ Upload by sending a `multipart/form-data` `POST` to `url` including all `fields`
   "collectionNames": ["Dev Log"],
   "publishDateUtc": null,
   "tags": ["release"],
-  "pending": null,
+  "photoAttachmentFileNames": [],
+  "attachmentFileNames": [],
   "patreonPostId": "12345678",
   "patreonUpdatedAt": "2026-05-14T10:00:00Z",
   "updatedAt": "2026-05-14T10:00:00Z",
@@ -84,26 +86,26 @@ Upload by sending a `multipart/form-data` `POST` to `url` including all `fields`
 }
 ```
 
-| Field              | Type           | Description                                         |
-| ------------------ | -------------- | --------------------------------------------------- |
-| `id`               | string         | Internal post ID                                    |
-| `title`            | string         | Post title                                          |
-| `content`          | string         | Post body                                           |
-| `contentFormat`    | string         | `text/plain` or `text/markdown`                     |
-| `files`            | PostFile[]     | Currently attached files                            |
-| `encrypted`        | boolean        | Whether attached files are encrypted                |
-| `isPublic`         | boolean        | Public or patreon-restricted                        |
-| `tierNames`        | string[]       | Tiers that can access the post (when not public)    |
-| `collectionNames`  | string[]       | Collections this post belongs to                    |
-| `publishDateUtc`   | string \| null | Scheduled publish date (ISO 8601 UTC) _(optional)_  |
-| `tags`             | string[]       | Tags                                                |
-| `pending`          | object \| null | Pending changes not yet applied by the extension    |
-| `patreonPostId`    | string         | Linked Patreon post ID                              |
-| `patreonUpdatedAt` | string         | When the extension last synced this post to Patreon |
-| `updatedAt`        | string         | Last modified timestamp                             |
-| `createdAt`        | string         | Creation timestamp                                  |
-
-The `pending` object has the same shape as the post fields and represents changes queued for the Chrome extension to apply.
+| Field                      | Type                         | Description                                             |
+| -------------------------- | ---------------------------- | ------------------------------------------------------- |
+| `id`                       | string                       | Internal post ID                                        |
+| `title`                    | string                       | Post title                                              |
+| `content`                  | string                       | Post body                                               |
+| `status`                   | `"pending"` \| `"published"` | Post lifecycle state                                    |
+| `contentFormat`            | string                       | `text/plain` or `text/markdown`                         |
+| `files`                    | PostFile[]                   | Attached files                                          |
+| `encrypted`                | boolean                      | Whether attached files are encrypted                    |
+| `isPublic`                 | boolean                      | Public or patreon-restricted                            |
+| `tierNames`                | string[]                     | Tiers that can access the post (when not public)        |
+| `collectionNames`          | string[]                     | Collections this post belongs to                        |
+| `publishDateUtc`           | string \| null               | Scheduled publish date (ISO 8601 UTC) _(optional)_      |
+| `tags`                     | string[]                     | Tags                                                    |
+| `photoAttachmentFileNames` | string[]                     | Filenames to attach as Patreon photo uploads            |
+| `attachmentFileNames`      | string[] \| null             | Filenames to attach as generic attachments _(optional)_ |
+| `patreonPostId`            | string                       | Linked Patreon post ID                                  |
+| `patreonUpdatedAt`         | string                       | When the extension last synced this post to Patreon     |
+| `updatedAt`                | string                       | Last modified timestamp                                 |
+| `createdAt`                | string                       | Creation timestamp                                      |
 
 ---
 
@@ -161,23 +163,27 @@ Creates a new post.
   "tags": ["release"],
   "ttlDays": null,
   "encrypted": false,
-  "addFiles": [{ "name": "image.png" }]
+  "files": [{ "name": "image.png", "size": 204800 }],
+  "photoAttachmentFileNames": ["image.png"],
+  "attachmentFileNames": []
 }
 ```
 
-| Field             | Type       | Required | Description                                        |
-| ----------------- | ---------- | -------- | -------------------------------------------------- |
-| `title`           | string     | Yes      | Post title                                         |
-| `content`         | string     | Yes      | Post body                                          |
-| `contentFormat`   | string     | No       | `text/plain` (default) or `text/markdown`          |
-| `isPublic`        | boolean    | Yes      | Public or patreon-restricted                       |
-| `tierNames`       | string[]   | No       | Tiers allowed to access (when `isPublic` is false) |
-| `collectionNames` | string[]   | No       | Collections this post belongs to                   |
-| `publishDateUtc`  | string     | No       | Scheduled publish date (ISO 8601 UTC)              |
-| `tags`            | string[]   | No       | Tags                                               |
-| `ttlDays`         | integer    | No       | Days until the post is automatically deleted       |
-| `encrypted`       | boolean    | No       | Whether attached files are encrypted client-side   |
-| `addFiles`        | PostFile[] | No       | Files to attach (only `name` is required here)     |
+| Field                      | Type       | Required | Description                                              |
+| -------------------------- | ---------- | -------- | -------------------------------------------------------- |
+| `title`                    | string     | Yes      | Post title                                               |
+| `content`                  | string     | No       | Post body                                                |
+| `contentFormat`            | string     | No       | `text/plain` (default) or `text/markdown`                |
+| `isPublic`                 | boolean    | No       | Public or patreon-restricted (default: false)            |
+| `tierNames`                | string[]   | No       | Tiers allowed to access (when `isPublic` is false)       |
+| `collectionNames`          | string[]   | No       | Collections this post belongs to                         |
+| `publishDateUtc`           | string     | No       | Scheduled publish date (ISO 8601 UTC)                    |
+| `tags`                     | string[]   | No       | Tags                                                     |
+| `ttlDays`                  | integer    | No       | Days until the post metadata expires (1–90, default: 30) |
+| `encrypted`                | boolean    | No       | Whether attached files are encrypted client-side         |
+| `files`                    | PostFile[] | No       | Files to attach (`name` and `size` required)             |
+| `photoAttachmentFileNames` | string[]   | No       | Which filenames to upload as Patreon photo attachments   |
+| `attachmentFileNames`      | string[]   | No       | Which filenames to upload as generic attachments         |
 
 **Response** `200 OK`
 
@@ -195,13 +201,15 @@ Creates a new post.
 }
 ```
 
-`uploadUrls` contains one entry per file in `addFiles`. Files must be uploaded to their respective presigned URLs immediately after this call.
+`uploadUrls` contains one entry per file in `files`. Files must be uploaded to their respective presigned URLs immediately after this call. The upload window is **24 hours** — after that, any files not yet confirmed are permanently deleted.
 
 ---
 
 ### `PUT /api/v1/post/{id}`
 
-Updates an existing post.
+Updates an existing post's metadata. File attachments cannot be changed via update — they are set at creation time only.
+
+Send `status: "published"` to confirm that the Chrome extension has successfully published the post to Patreon.
 
 **Request body**
 
@@ -210,30 +218,26 @@ Updates an existing post.
   "title": "Updated Title",
   "content": "New content",
   "contentFormat": "text/plain",
+  "status": "published",
   "isPublic": true,
   "tierNames": [],
   "collectionNames": ["Dev Log"],
-  "publishDateUtc": null,
   "tags": ["v2"],
-  "patreonPostId": null,
-  "addFiles": [],
-  "removeFiles": [{ "name": "old-image.png" }]
+  "patreonPostId": "12345678"
 }
 ```
 
-| Field             | Type       | Required | Description                                        |
-| ----------------- | ---------- | -------- | -------------------------------------------------- |
-| `title`           | string     | Yes      | New title                                          |
-| `content`         | string     | Yes      | New body                                           |
-| `contentFormat`   | string     | No       | `text/plain` (default) or `text/markdown`          |
-| `isPublic`        | boolean    | Yes      | Public or patreon-restricted                       |
-| `tierNames`       | string[]   | No       | Tiers allowed to access (when `isPublic` is false) |
-| `collectionNames` | string[]   | No       | Collections this post belongs to                   |
-| `publishDateUtc`  | string     | No       | Scheduled publish date (ISO 8601 UTC)              |
-| `tags`            | string[]   | No       | Tags                                               |
-| `patreonPostId`   | string     | No       | Override the linked Patreon post ID                |
-| `addFiles`        | PostFile[] | No       | Files to attach (only `name` is required here)     |
-| `removeFiles`     | PostFile[] | No       | Files to remove (only `name` is required here)     |
+| Field             | Type                         | Required | Description                                        |
+| ----------------- | ---------------------------- | -------- | -------------------------------------------------- |
+| `title`           | string                       | Yes      | New title                                          |
+| `content`         | string                       | No       | New body                                           |
+| `contentFormat`   | string                       | No       | `text/plain` (default) or `text/markdown`          |
+| `status`          | `"pending"` \| `"published"` | No       | Set to `"published"` to confirm publication        |
+| `isPublic`        | boolean                      | No       | Public or patreon-restricted                       |
+| `tierNames`       | string[]                     | No       | Tiers allowed to access (when `isPublic` is false) |
+| `collectionNames` | string[]                     | No       | Collections this post belongs to                   |
+| `tags`            | string[]                     | No       | Tags                                               |
+| `patreonPostId`   | string                       | No       | Override the linked Patreon post ID                |
 
 **Response** `200 OK`
 
@@ -243,10 +247,7 @@ Updates an existing post.
   "data": {
     "post": {
       /* PostGetResult */
-    },
-    "uploadUrls": [
-      /* PostUploadSession[] */
-    ]
+    }
   }
 }
 ```
@@ -270,7 +271,7 @@ Deletes a post by ID.
 
 ## File Upload Flow
 
-After a `POST /api/v1/post` or `PUT /api/v1/post/{id}` call that includes files, the response contains `uploadUrls`. For each entry, upload the file with a `multipart/form-data` POST:
+After a `POST /api/v1/post` call that includes files, the response contains `uploadUrls`. For each entry, upload the file with a `multipart/form-data` POST:
 
 ```
 POST <uploadUrls[i].url>
@@ -281,6 +282,8 @@ file=<binary file content>
 ```
 
 The `file` part must come **last**. The presigned URLs are typically short-lived.
+
+> **Important:** Files must be uploaded within **24 hours** of creating the post. After that, any unconfirmed files are permanently deleted from Papoa.
 
 ### Encryption
 

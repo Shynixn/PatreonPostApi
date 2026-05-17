@@ -59,8 +59,8 @@ export class PatreonService {
     tabId?: number,
     autoSubmit?: boolean,
   ): Promise<void> {
-    const pending = post.pending;
-    if (!pending) throw new Error("Post has no pending content to publish.");
+    if (post.status !== "pending")
+      throw new Error("Post is not in pending status.");
 
     let patreonUrl = this.patreonUrl;
     let isEditingExistingPost = false;
@@ -91,7 +91,7 @@ export class PatreonService {
     await this.browserService.writeElementByAttribute(
       "placeholder",
       "Title",
-      pending.title,
+      post.title,
       targetTabId,
     );
 
@@ -100,15 +100,15 @@ export class PatreonService {
     await this.browserService.writeElementByAttribute(
       "aria-label",
       "Text input field for post content",
-      pending.contentFormat === "text/markdown"
-        ? `${await this.browserService.markdown2Html(pending.content)}`
-        : "<p>" + pending.content.replace(/\n/g, "</p><p>") + "</p>",
+      post.contentFormat === "text/markdown"
+        ? `${await this.browserService.markdown2Html(post.content)}`
+        : "<p>" + post.content.replace(/\n/g, "</p><p>") + "</p>",
       targetTabId,
     );
 
     // Paid or Public
     await this.browserService.delay(1000);
-    if (pending.isPublic) {
+    if (post.isPublic) {
       this.browserService.clickElementByAttribute(
         "aria-label",
         "Free access",
@@ -118,7 +118,7 @@ export class PatreonService {
       this.browserService.clickElementByAttribute("value", "paid", targetTabId);
 
       // Select Specific Tiers
-      if (pending.tierNames.length > 0) {
+      if (post.tierNames.length > 0) {
         await this.browserService.delay(1000);
         await this.browserService.clickElementByAttribute(
           "aria-label",
@@ -133,7 +133,7 @@ export class PatreonService {
           targetTabId,
         );
 
-        for (const tierName of pending.tierNames) {
+        for (const tierName of post.tierNames) {
           await this.browserService.delay(1000);
           await this.browserService.clickElementByAttribute(
             "aria-label",
@@ -145,7 +145,7 @@ export class PatreonService {
     }
 
     // Select Collections
-    if (pending.collectionNames.length > 0) {
+    if (post.collectionNames.length > 0) {
       await this.browserService.delay(1000);
       await this.browserService.clickElementByAttribute(
         "aria-label",
@@ -153,7 +153,7 @@ export class PatreonService {
         targetTabId,
       );
       await this.browserService.delay(1000);
-      for (const collectionName of pending.collectionNames) {
+      for (const collectionName of post.collectionNames) {
         await this.browserService.delay(1000);
         await this.browserService.clickElementByAttribute(
           "aria-label",
@@ -170,7 +170,7 @@ export class PatreonService {
     }
 
     // Publish Date
-    if (pending.publishDateUtc != null) {
+    if (post.publishDateUtc != null) {
       await this.browserService.delay(1000);
       await this.browserService.clickElementById(
         "scheduled-for-toggle",
@@ -178,7 +178,7 @@ export class PatreonService {
       );
       // Date
       await this.browserService.delay(1000);
-      const date = new Date(pending.publishDateUtc);
+      const date = new Date(post.publishDateUtc);
       const month = String(date.getUTCMonth() + 1).padStart(2, "0");
       const day = String(date.getUTCDate()).padStart(2, "0");
       const year = date.getUTCFullYear();
@@ -199,8 +199,8 @@ export class PatreonService {
     }
 
     // Post tags
-    if (pending.tags != null) {
-      for (const tag of pending.tags) {
+    if (post.tags != null && post.tags.length > 0) {
+      for (const tag of post.tags) {
         await this.browserService.delay(1000);
         await this.browserService.writeElementByAttribute(
           "data-tag",
@@ -217,7 +217,7 @@ export class PatreonService {
     const postWithUrls = await this.postService.getPostWithDownloadUrls(
       post.id,
     );
-    const filesToUpload = postWithUrls.pending?.addFiles ?? [];
+    const filesToUpload = postWithUrls.files ?? [];
     const attachmentFiles: Array<{ content: ArrayBuffer; name: string }> = [];
     const photoFiles: Array<{ content: ArrayBuffer; name: string }> = [];
     for (const file of filesToUpload) {
@@ -241,10 +241,10 @@ export class PatreonService {
           );
         }
 
-        if (pending.attachmentFileNames.includes(file.name)) {
+        if ((post.attachmentFileNames ?? []).includes(file.name)) {
           attachmentFiles.push({ content: fileContent, name: file.name });
         }
-        if (pending.photoAttachmentFileNames.includes(file.name)) {
+        if (post.photoAttachmentFileNames.includes(file.name)) {
           photoFiles.push({ content: fileContent, name: file.name });
         }
       } catch (error) {

@@ -15,7 +15,7 @@ public class Post
     public List<string> Tags { get; set; } = [];
     public List<string> PhotoAttachmentFileNames { get; set; } = [];
     public List<string> AttachmentFileNames { get; set; } = [];
-    public PostPending? Pending { get; set; }
+    public string Status { get; set; } = string.Empty;
     public string PatreonPostId { get; set; } = string.Empty;
     public string CreatedAt { get; set; } = string.Empty;
     public string UpdatedAt { get; set; } = string.Empty;
