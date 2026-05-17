@@ -3,7 +3,7 @@ using Papoa.Contract;
 
 namespace Papoa.Command;
 
-public class PostDeleteCommand(IPostService postService)
+public class PostDeleteCommand(IPostService postService, IPrintingService printingService)
 {
     /// <summary>
     /// Builds the <c>post delete</c> sub-command.
@@ -18,7 +18,7 @@ public class PostDeleteCommand(IPostService postService)
             Required = false,
             DefaultValueFactory = _ => "text/plain",
         };
-        outputFormatOption.AcceptOnlyFromAmong("text/plain");
+        outputFormatOption.AcceptOnlyFromAmong("text/plain", "application/json");
 
         command.Add(idOption);
         command.Add(outputFormatOption);
@@ -30,10 +30,7 @@ public class PostDeleteCommand(IPostService postService)
 
             await postService.DeletePostAsync(id);
 
-            if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
-            {
-                Console.WriteLine($"Post {id} deleted.");
-            }
+            printingService.PrintMessage($"Post {id} deleted.", outputFormat);
         });
 
         return command;

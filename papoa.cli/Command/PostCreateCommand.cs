@@ -37,7 +37,7 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
             Required = false,
             DefaultValueFactory = _ => "text/plain",
         };
-        outputFormatOption.AcceptOnlyFromAmong("text/plain");
+        outputFormatOption.AcceptOnlyFromAmong("text/plain", "application/json");
 
         command.Add(titleOption);
         command.Add(contentOption);
@@ -119,36 +119,18 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
                 var uploadSession = createResult.UploadUrls[i];
                 var (filePath, encryptedBytes, _) = preparedFiles[i];
 
-                if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.WriteLine($"Uploading {filePath}...");
-                }
+                printingService.PrintMessage($"Uploading {filePath}...", outputFormat);
 
                 if (encryptedBytes is not null)
                     await fileUploadService.UploadBytesAsync(uploadSession, encryptedBytes, Path.GetFileName(filePath));
                 else
                     await fileUploadService.UploadFileAsync(uploadSession, filePath, null);
 
-                if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.WriteLine($"Uploaded {filePath}.");
-                }
+                printingService.PrintMessage($"Uploaded {filePath}.", outputFormat);
             }
 
-            if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
-            {
-                var post = createResult.Post;
-                Console.WriteLine("Post Created");
-                Console.WriteLine($"  Id:               {post.Id}");
-                Console.WriteLine($"  Title:            {post.Title}");
-                Console.WriteLine($"  Content:          {post.Content}");
-                Console.WriteLine($"  Is Public:        {post.IsPublic}");
-                Console.WriteLine($"  Tier Names:       {string.Join(", ", post.TierNames)}");
-                Console.WriteLine($"  Collection Names: {string.Join(", ", post.CollectionNames)}");
-                Console.WriteLine($"  Tags:             {string.Join(", ", post.Tags)}");
-                Console.WriteLine($"  Files:            {printingService.FilesProp(post.Files)}");
-                Console.WriteLine($"  Created At:       {post.CreatedAt}");
-            }
+            printingService.PrintMessage("Post Created", outputFormat);
+            printingService.PrintPost(createResult.Post, outputFormat);
         });
 
         return command;

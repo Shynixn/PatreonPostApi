@@ -18,7 +18,7 @@ public class PostListCommand(IPostService postService, IPrintingService printing
             Required = false,
             DefaultValueFactory = _ => "text/plain",
         };
-        outputFormatOption.AcceptOnlyFromAmong("text/plain");
+        outputFormatOption.AcceptOnlyFromAmong("text/plain", "application/json");
 
         command.Add(idOption);
         command.Add(outputFormatOption);
@@ -30,23 +30,7 @@ public class PostListCommand(IPostService postService, IPrintingService printing
 
             var posts = await postService.ListPostsAsync(id);
 
-            if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
-            {
-                foreach (var post in posts)
-                {
-                    Console.WriteLine($"Id:               {post.Id}");
-                    Console.WriteLine($"Title:            {post.Title}");
-                    Console.WriteLine($"Content:          {post.Content}");
-                    Console.WriteLine($"Status:           {post.Status}");
-                    Console.WriteLine($"Is Public:        {post.IsPublic}");
-                    Console.WriteLine($"Tier Names:       {string.Join(", ", post.TierNames)}");
-                    Console.WriteLine($"Collection Names: {string.Join(", ", post.CollectionNames)}");
-                    Console.WriteLine($"Tags:             {string.Join(", ", post.Tags)}");
-                    Console.WriteLine($"Files:            {printingService.FilesProp(post.Files)}");
-                    Console.WriteLine($"Created At:       {post.CreatedAt}");
-                    Console.WriteLine();
-                }
-            }
+            printingService.PrintPosts(posts, outputFormat);
         });
 
         return command;

@@ -17,6 +17,19 @@ For automation purposes, the CLI offers the following non-interactive commands.
 | `PAPOA_BASE_URL`     | No       | Base URL of the Papoa API          | `https://api.papoa.shynixn.com` |
 | `PAPOA_API_KEY`      | Yes      | API key sent as `x-api-key` header | —                               |
 
+### Output Format
+
+All commands accept an `--output-format` option that controls how results are written to stdout.
+
+| Value              | Behaviour                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| `text/plain`       | Human-readable, labelled fields. Status messages (e.g. upload progress) are also printed.     |
+| `application/json` | Prettified JSON object (or array for `post list`). No status messages — only the JSON output. |
+
+The `application/json` format is intended for scripting and piping into tools like `jq`.
+
+---
+
 ### Commands
 
 #### `post create`
@@ -43,7 +56,7 @@ papoa post create --title <title> [options]
 | `--photo-attachment-file-name <value>` | No       | Filename to mark as a photo attachment (repeat for multiple)   |
 | `--attachment-file-name <value>`       | No       | Filename to mark as a generic attachment (repeat for multiple) |
 | `--password <value>`                   | No       | Encrypt attached files with AES-256-CBC before upload          |
-| `--output-format <value>`              | No       | Output format: `text/plain` (default)                          |
+| `--output-format <value>`              | No       | Output format: `text/plain` (default) or `application/json`    |
 
 > When `--password` is supplied, files are encrypted client-side with AES-256-CBC before leaving your
 > machine. The Papoa service stores only the ciphertext and cannot read your file contents. It is **highly** recommended to use `--password` when using the CLI. It protects you against potential leaks of your valuable files.
@@ -68,20 +81,20 @@ Send `--status published` to confirm that the Chrome extension has successfully 
 papoa post update --id <id> --title <title> [options]
 ```
 
-| Option                      | Required | Description                                           |
-| --------------------------- | -------- | ----------------------------------------------------- |
-| `--id <value>`              | Yes      | ID of the post to update                              |
-| `--title <value>`           | Yes      | New title                                             |
-| `--content <value>`         | No       | New body content                                      |
-| `--content-file <path>`     | No       | Read body content from a file (overrides `--content`) |
-| `--content-format <value>`  | No       | `text/plain` (default) or `text/markdown`             |
-| `--is-public`               | No       | Make the post publicly available (default: false)     |
-| `--tier-name <value>`       | No       | Tier that can access the post (repeat for multiple)   |
-| `--collection-name <value>` | No       | Collection this post belongs to (repeat for multiple) |
-| `--tag <value>`             | No       | Tag to attach to the post (repeat for multiple)       |
-| `--status <value>`          | No       | Set post status: `pending` or `published`             |
-| `--patreon-post-id <value>` | No       | Override the linked Patreon post ID                   |
-| `--output-format <value>`   | No       | Output format: `text/plain` (default)                 |
+| Option                      | Required | Description                                                 |
+| --------------------------- | -------- | ----------------------------------------------------------- |
+| `--id <value>`              | Yes      | ID of the post to update                                    |
+| `--title <value>`           | Yes      | New title                                                   |
+| `--content <value>`         | No       | New body content                                            |
+| `--content-file <path>`     | No       | Read body content from a file (overrides `--content`)       |
+| `--content-format <value>`  | No       | `text/plain` (default) or `text/markdown`                   |
+| `--is-public`               | No       | Make the post publicly available (default: false)           |
+| `--tier-name <value>`       | No       | Tier that can access the post (repeat for multiple)         |
+| `--collection-name <value>` | No       | Collection this post belongs to (repeat for multiple)       |
+| `--tag <value>`             | No       | Tag to attach to the post (repeat for multiple)             |
+| `--status <value>`          | No       | Set post status: `pending` or `published`                   |
+| `--patreon-post-id <value>` | No       | Override the linked Patreon post ID                         |
+| `--output-format <value>`   | No       | Output format: `text/plain` (default) or `application/json` |
 
 > Update only changes metadata — visibility, tiers, tags, content. Files attached at creation time cannot be added or removed.
 
@@ -102,10 +115,10 @@ Deletes a post by ID.
 papoa post delete --id <id> [options]
 ```
 
-| Option                    | Required | Description                           |
-| ------------------------- | -------- | ------------------------------------- |
-| `--id <value>`            | Yes      | ID of the post to delete              |
-| `--output-format <value>` | No       | Output format: `text/plain` (default) |
+| Option                    | Required | Description                                                 |
+| ------------------------- | -------- | ----------------------------------------------------------- |
+| `--id <value>`            | Yes      | ID of the post to delete                                    |
+| `--output-format <value>` | No       | Output format: `text/plain` (default) or `application/json` |
 
 **Example**
 
@@ -123,10 +136,10 @@ Lists all posts, or retrieves a single post if `--id` is provided.
 papoa post list [options]
 ```
 
-| Option                    | Required | Description                           |
-| ------------------------- | -------- | ------------------------------------- |
-| `--id <value>`            | No       | ID of a specific post to retrieve     |
-| `--output-format <value>` | No       | Output format: `text/plain` (default) |
+| Option                    | Required | Description                                                 |
+| ------------------------- | -------- | ----------------------------------------------------------- |
+| `--id <value>`            | No       | ID of a specific post to retrieve                           |
+| `--output-format <value>` | No       | Output format: `text/plain` (default) or `application/json` |
 
 **Examples**
 
