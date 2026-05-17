@@ -82,7 +82,9 @@ Upload by sending a `multipart/form-data` `POST` to `url` including all `fields`
   "patreonPostId": "12345678",
   "patreonUpdatedAt": "2026-05-14T10:00:00Z",
   "updatedAt": "2026-05-14T10:00:00Z",
-  "createdAt": "2026-05-14T09:00:00Z"
+  "createdAt": "2026-05-14T09:00:00Z",
+  "expiresAt": "2026-06-13T09:00:00Z",
+  "filesExpireAt": "2026-05-15T09:00:00Z"
 }
 ```
 
@@ -106,6 +108,8 @@ Upload by sending a `multipart/form-data` `POST` to `url` including all `fields`
 | `patreonUpdatedAt`         | string                       | When the extension last synced this post to Patreon     |
 | `updatedAt`                | string                       | Last modified timestamp                                 |
 | `createdAt`                | string                       | Creation timestamp                                      |
+| `expiresAt`                | string                       | When the post metadata record expires (ISO 8601 UTC)    |
+| `filesExpireAt`            | string                       | When the attached files expire (ISO 8601 UTC)           |
 
 ---
 

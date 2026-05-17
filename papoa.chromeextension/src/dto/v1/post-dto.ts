@@ -54,6 +54,8 @@ export interface PostGetResultDTO {
   patreonUpdatedAt: string;
   updatedAt: string;
   createdAt: string;
+  expiresAt: string;
+  filesExpireAt: string;
 }
 
 export interface PostFileDTO {
