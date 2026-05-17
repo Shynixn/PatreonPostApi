@@ -66,8 +66,6 @@ Open the interactive version of the CLI by just starting the downloaded CLI with
 
 e.g. for windows, double click the `papoa-win-x64.exe` file
 
-For the full CLI reference, non interactive, see the [CLI documentation](papoa.docs/CLI.md).
-
 It should prompt you for your API key.
 
 ```bash
