@@ -229,6 +229,10 @@ For the REST API reference used by the CLI (and for building your own integratio
 
 ## Questions and Answers
 
+**The Chromeextension does not fill in anything?**
+
+Make sure your Patreon language is set to English (United States) — you can check this at https://www.patreon.com/settings/account.
+
 **How long do I have to publish the post after sending it to Papoa?**
 
 You have **24 hours**. After that, any files attached to the post are permanently deleted from Papoa. The post metadata may remain accessible depending on your TTL setting, but the uploaded files are gone. Make sure the Chrome extension processes the post promptly after creation.
