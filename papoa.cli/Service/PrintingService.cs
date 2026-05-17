@@ -46,6 +46,8 @@ public class PrintingService : IPrintingService
         Console.WriteLine($"  Patreon Post Id:       {post.PatreonPostId}");
         Console.WriteLine($"  Created At:            {post.CreatedAt}");
         Console.WriteLine($"  Updated At:            {post.UpdatedAt}");
+        Console.WriteLine($"  Expires At:            {post.ExpiresAt}");
+        Console.WriteLine($"  Files Expire At:       {post.FilesExpireAt}");
         Console.WriteLine($"  Patreon Updated At:    {post.PatreonUpdatedAt ?? "-"}");
     }
 
@@ -76,6 +78,8 @@ public class PrintingService : IPrintingService
             Console.WriteLine($"  Patreon Post Id:       {post.PatreonPostId}");
             Console.WriteLine($"  Created At:            {post.CreatedAt}");
             Console.WriteLine($"  Updated At:            {post.UpdatedAt}");
+            Console.WriteLine($"  Expires At:            {post.ExpiresAt}");
+            Console.WriteLine($"  Files Expire At:       {post.FilesExpireAt}");
             Console.WriteLine($"  Patreon Updated At:    {post.PatreonUpdatedAt ?? "-"}");
             Console.WriteLine();
         }

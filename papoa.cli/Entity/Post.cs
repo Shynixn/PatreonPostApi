@@ -19,5 +19,7 @@ public class Post
     public string PatreonPostId { get; set; } = string.Empty;
     public string CreatedAt { get; set; } = string.Empty;
     public string UpdatedAt { get; set; } = string.Empty;
+    public string ExpiresAt { get; set; } = string.Empty;
+    public string FilesExpireAt { get; set; } = string.Empty;
     public string? PatreonUpdatedAt { get; set; }
 }
