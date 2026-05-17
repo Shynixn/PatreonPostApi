@@ -224,14 +224,19 @@ For this first test post, **leave both Background fetch and Auto-submit disabled
 
 ---
 
-For the full CLI command reference, see the [CLI documentation](papoa.docs/CLI.md).
-For the REST API reference used by the CLI (and for building your own integrations), see the [API documentation](papoa.docs/API.md).
+## Helpful Links
+
+- For the full CLI command reference, see the [CLI documentation](papoa.docs/CLI.md).
+- For the Test set, a list of examples, see the [TEST documentation](papoa.docs/TEST.md)
+- For the REST API reference used by the CLI (and for building your own integrations), see the [API documentation](papoa.docs/API.md).
 
 ## Questions and Answers
 
 **The Chromeextension does not fill in anything?**
 
 Make sure your Patreon language is set to English (United States) — you can check this at https://www.patreon.com/settings/account.
+
+---
 
 **How long do I have to publish the post after sending it to Papoa?**
 
