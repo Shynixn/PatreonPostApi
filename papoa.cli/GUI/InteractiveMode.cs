@@ -82,34 +82,7 @@ public class InteractiveMode(
             return;
         }
 
-        var table = new Table()
-            .Border(TableBorder.Rounded)
-            .BorderColor(Color.Grey)
-            .AddColumn(new TableColumn("[bold]Id[/]"))
-            .AddColumn(new TableColumn("[bold]Title[/]"))
-            .AddColumn(new TableColumn("[bold]Status[/]"))
-            .AddColumn(new TableColumn("[bold]Content[/]"))
-            .AddColumn(new TableColumn("[bold]Public[/]"))
-            .AddColumn(new TableColumn("[bold]Tiers[/]"))
-            .AddColumn(new TableColumn("[bold]Files[/]"))
-            .AddColumn(new TableColumn("[bold]Created At[/]"))
-            .AddColumn(new TableColumn("[bold]Patreon Updated At[/]"));
-
-        foreach (var post in posts)
-        {
-            table.AddRow(
-                new Text(post.Id),
-                new Text(post.Title),
-                new Markup(post.Status == "published" ? "[green]published[/]" : "[yellow]pending[/]"),
-                new Text(Truncate(post.Content, 50)),
-                new Text(post.IsPublic ? "Yes" : "No"),
-                new Text(string.Join(", ", post.TierNames)),
-                new Text(printingService.FilesProp(post.Files)),
-                new Text(post.CreatedAt),
-                new Text(post.PatreonUpdatedAt ?? "-"));
-        }
-
-        AnsiConsole.Write(table);
+        printingService.PrintPosts(posts, "text/plain");
         Pause();
     }
 
@@ -145,12 +118,12 @@ public class InteractiveMode(
         }
         else if (contentInputMode == "Text file")
         {
-            var contentFiles = BrowseForFiles("Select post content file:");
-            if (contentFiles.Count > 0)
+            var contentFile = BrowseForFile("Select post content file:");
+            if (contentFile != null)
             {
                 try
                 {
-                    content = await File.ReadAllTextAsync(contentFiles[0]);
+                    content = await File.ReadAllTextAsync(contentFile);
                 }
                 catch (Exception ex)
                 {
@@ -177,6 +150,25 @@ public class InteractiveMode(
         var collectionNames = PromptForStringList("Collection names [grey](collections this post belongs to)[/]");
 
         var addFiles = BrowseForFiles("Add files to attach:");
+
+        List<string> photoAttachmentFileNames = [];
+        List<string> attachmentFileNames = [];
+        if (addFiles.Count > 0)
+        {
+            var fileNames = addFiles.Select(f => Path.GetFileName(f) ?? f).ToList();
+
+            photoAttachmentFileNames = AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("Which files should be [bold]photo attachments[/]? [grey](space to toggle, enter to confirm)[/]")
+                    .NotRequired()
+                    .AddChoices(fileNames));
+
+            attachmentFileNames = AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("Which files should be [bold]regular attachments[/]? [grey](space to toggle, enter to confirm)[/]")
+                    .NotRequired()
+                    .AddChoices(fileNames));
+        }
 
         string? password = null;
         if (AnsiConsole.Confirm("Encrypt with password?", defaultValue: false))
@@ -210,7 +202,8 @@ public class InteractiveMode(
             CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
             Encrypted = password != null,
             Files = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
-            AttachmentFileNames = addFiles.Count > 0 ? addFiles.Select(f => Path.GetFileName(f)).ToList() : null,
+            PhotoAttachmentFileNames = photoAttachmentFileNames.Count > 0 ? photoAttachmentFileNames : null,
+            AttachmentFileNames = attachmentFileNames.Count > 0 ? attachmentFileNames : null,
         };
 
         PostCreateResult? result = null;
@@ -232,15 +225,8 @@ public class InteractiveMode(
         if (result != null)
         {
             await UploadFilesAsync(result.UploadUrls, preparedFiles);
-            var post = result.Post;
             AnsiConsole.MarkupLine("[green]Post created![/]");
-            AnsiConsole.MarkupLine($"  [bold]Id:[/]       {Markup.Escape(post.Id)}");
-            AnsiConsole.MarkupLine($"  [bold]Title:[/]    {Markup.Escape(post.Title)}");
-            AnsiConsole.MarkupLine($"  [bold]Public:[/]   {(post.IsPublic ? "Yes" : "No")}");
-            if (post.TierNames.Count > 0)
-                AnsiConsole.MarkupLine($"  [bold]Tiers:[/]    {Markup.Escape(string.Join(", ", post.TierNames))}");
-            if (post.CollectionNames.Count > 0)
-                AnsiConsole.MarkupLine($"  [bold]Collections:[/] {Markup.Escape(string.Join(", ", post.CollectionNames))}");
+            printingService.PrintPost(result.Post, "text/plain");
         }
 
         Pause();
@@ -283,12 +269,12 @@ public class InteractiveMode(
         }
         else if (contentInputMode == "Text file")
         {
-            var contentFiles = BrowseForFiles("Select post content file:");
-            if (contentFiles.Count > 0)
+            var contentFile = BrowseForFile("Select post content file:");
+            if (contentFile != null)
             {
                 try
                 {
-                    content = await File.ReadAllTextAsync(contentFiles[0]);
+                    content = await File.ReadAllTextAsync(contentFile);
                 }
                 catch (Exception ex)
                 {
@@ -353,6 +339,7 @@ public class InteractiveMode(
         if (result != null)
         {
             AnsiConsole.MarkupLine("[green]Post updated![/]");
+            printingService.PrintPost(result.Post, "text/plain");
         }
 
         Pause();
@@ -454,6 +441,71 @@ public class InteractiveMode(
         }
 
         return items;
+    }
+
+    /// <summary>
+    /// Arrow-key file browser that returns a single selected file path, or null if cancelled.
+    /// </summary>
+    private static string? BrowseForFile(string title)
+    {
+        const string CancelLabel = "✗  Cancel";
+        const string DirPrefix = "📁 ";
+        const string FilePrefix = "📄 ";
+        const string ParentLabel = "📁 ..";
+
+        var currentDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!Directory.Exists(currentDir))
+            currentDir = Directory.GetCurrentDirectory();
+
+        AnsiConsole.MarkupLine($"[bold]{Markup.Escape(title)}[/] [grey](arrows to navigate, enter to select, ✗ Cancel to skip)[/]");
+
+        while (true)
+        {
+            AnsiConsole.MarkupLine($"[grey]Current:[/] [yellow]{Markup.Escape(currentDir)}[/]");
+
+            var choices = new List<string> { CancelLabel };
+            if (Directory.GetParent(currentDir) != null)
+                choices.Add(ParentLabel);
+
+            try
+            {
+                choices.AddRange(Directory.GetDirectories(currentDir)
+                    .OrderBy(d => d)
+                    .Select(d => DirPrefix + Path.GetFileName(d)));
+                choices.AddRange(Directory.GetFiles(currentDir)
+                    .OrderBy(f => f)
+                    .Select(f => FilePrefix + Path.GetFileName(f)));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                AnsiConsole.MarkupLine("[red]Access denied.[/]");
+                currentDir = Directory.GetParent(currentDir)?.FullName ?? currentDir;
+                continue;
+            }
+
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .PageSize(18)
+                    .HighlightStyle("cyan1")
+                    .AddChoices(choices));
+
+            if (choice == CancelLabel)
+                return null;
+
+            if (choice == ParentLabel)
+            {
+                currentDir = Directory.GetParent(currentDir)!.FullName;
+                continue;
+            }
+
+            if (choice.StartsWith(DirPrefix))
+            {
+                currentDir = Path.Combine(currentDir, choice[DirPrefix.Length..]);
+                continue;
+            }
+
+            return Path.Combine(currentDir, choice[FilePrefix.Length..]);
+        }
     }
 
     /// <summary>

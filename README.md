@@ -126,55 +126,72 @@ Post text:
 > Text file
 ```
 
-2. Select the post.md (Markdown) file and do not add any other files
-
-```bash
-Selected: none
-Added: post.md
-Add another file? [y/n] (n): n
-```
+2. Navigate to and select the `post.md` file — the browser closes immediately after selection
 
 3. Select text format markdown
 
 ```bash
-Text format:
+Content format:
 
   text/plain
 > text/markdown
 ```
 
-4. Add the icon.png and do not add any other files
+4. Browse to and add the `icon.png` file, then choose **✓ Done**
 
-```bash
-Added: icon.png
-Add another file? [y/n] (n): n
+5. Select which files should be photo attachments (spacebar to toggle, enter to confirm)
+
+```
+Which files should be photo attachments? (space to toggle, enter to confirm)
+> [ ] icon.png
 ```
 
-5. Encrypt with password and add a personal password. You should use the same password for all of your posts.
+6. Select which files should be regular attachments
+
+```
+Which files should be regular attachments? (space to toggle, enter to confirm)
+> [ ] icon.png
+```
+
+7. Encrypt with password and add a personal password. You should use the same password for all of your posts.
 
 ```bash
-Add another file? [y/n] (n): n
 Encrypt with password? [y/n] (n): y
 Password: ****
 ```
 
-6. Success
+8. Success — all post fields are printed
 
 ```
   Uploaded icon.png.
 Post created!
-  Id:    017ef6005bf8435b8f0f541a81e3cef3
-  Title: "" -> "My first Papoa post"
+  Id:                    017ef6005bf8435b8f0f541a81e3cef3
+  Title:                 My first Papoa post
+  Content:               # April Update — New Chapter & Behind-the-S…
+  Content Format:        text/markdown
+  Status:                pending
+  Is Public:             False
+  Encrypted:             True
+  Files:                 [icon.png]
+  ...
 ```
 
-7. Use Post List to see all of your already created posts
+9. Use Post List to see all of your already created posts
 
-```bash
-╭──────────────────────────────────┬─────────────────────────────┬─────────────────────────────────────────────────────┬──────────────────┬──────────────────────────┬──────────────────────╮
-│ Id                               │ Title                       │ Text                                                │ Files            │ Created At               │ Patreon Updated At   │
-├──────────────────────────────────┼─────────────────────────────┼─────────────────────────────────────────────────────┼──────────────────┼──────────────────────────┼──────────────────────┤
-│ 017ef6005bf8435b8f0f541a81e3cef3 │ "" -> "My first Papoa post" │ "" -> "# April Update — New Chapter & Behind-the-S… │ [] -> [icon.png] │ 2026-05-09T18:05:56.977Z │ 0001-01-01T00:00:00Z │
-╰──────────────────────────────────┴─────────────────────────────┴─────────────────────────────────────────────────────┴──────────────────┴──────────────────────────┴──────────────────────╯
+```
+  Id:                    017ef6005bf8435b8f0f541a81e3cef3
+  Title:                 My first Papoa post
+  Content:               # April Update — New Chapter & Behind-the-S…
+  Content Format:        text/markdown
+  Status:                pending
+  Is Public:             False
+  Encrypted:             True
+  Files:                 [icon.png]
+  Photo Attachments:     icon.png
+  Attachments:           icon.png
+  Created At:            2026-05-09T18:05:56.977Z
+  Patreon Updated At:    -
+
 ```
 
 - This post has not been posted to patreon.com yet. You can see that the `Patreon Updated At` timestamp is not a valid value yet.

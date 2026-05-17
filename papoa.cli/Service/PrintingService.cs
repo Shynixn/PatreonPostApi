@@ -63,7 +63,8 @@ public class PrintingService : IPrintingService
         {
             Console.WriteLine($"  Id:                    {post.Id}");
             Console.WriteLine($"  Title:                 {post.Title}");
-            Console.WriteLine($"  Content:               {post.Content}");
+            var contentPreview = post.Content.Length > 80 ? post.Content[..80] + "\u2026" : post.Content;
+            Console.WriteLine($"  Content:               {contentPreview}");
             Console.WriteLine($"  Content Format:        {post.ContentFormat}");
             Console.WriteLine($"  Status:                {post.Status}");
             Console.WriteLine($"  Is Public:             {post.IsPublic}");
