@@ -75,7 +75,9 @@ papoa post create --title "My Post" --content-file post.md --content-format text
 
 Updates an existing post's metadata. File attachments cannot be changed after creation.
 
-Send `--status published` to confirm that the Chrome extension has successfully published the post to Patreon.
+Send `--status pending` to let the Chrome extension update the existing post.
+
+The status `publish` is set by the Chrome extension on successful form filling.
 
 ```
 papoa post update --id <id> [options]
@@ -102,7 +104,7 @@ papoa post update --id <id> [options]
 
 ```bash
 papoa post update --id abc123 --title "Updated Title" --content "New content" \
-  --tag v2 --status published
+  --tag v2 --status "pending"
 ```
 
 ---
