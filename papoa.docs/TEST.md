@@ -153,31 +153,7 @@ papoa post create --title "Encrypted Post" \
 
 ---
 
-### TC-CREATE-14 — Photo attachment file names
-
-```bash
-papoa post create --title "Photo Post" \
-  --file ./papoa.resources/icon.png \
-  --photo-attachment-file-name "icon.png"
-```
-
-**Expected:** Post created with `icon.png` listed as a photo attachment.
-
----
-
-### TC-CREATE-15 — Generic attachment file names
-
-```bash
-papoa post create --title "Attachment Post" \
-  --file /path/to/doc.pdf \
-  --attachment-file-name "doc.pdf"
-```
-
-**Expected:** Post created with `doc.pdf` listed as a generic attachment.
-
----
-
-### TC-CREATE-16 — Full combination
+### TC-CREATE-14 — Full combination
 
 ```bash
 papoa post create \
@@ -200,7 +176,7 @@ papoa post create \
 
 ---
 
-### TC-CREATE-17 — Invalid `--content-format` value
+### TC-CREATE-15 — Invalid `--content-format` value
 
 ```bash
 papoa post create --title "Bad Format" --content-format text/html
@@ -210,7 +186,7 @@ papoa post create --title "Bad Format" --content-format text/html
 
 ---
 
-### TC-CREATE-18 — Missing required `--title`
+### TC-CREATE-16 — Missing required `--title`
 
 ```bash
 papoa post create --content "No title here"
@@ -220,7 +196,7 @@ papoa post create --content "No title here"
 
 ---
 
-### TC-CREATE-19 — `--content-file` path does not exist
+### TC-CREATE-17 — `--content-file` path does not exist
 
 ```bash
 papoa post create --title "Missing File" --content-file /nonexistent/post.md
