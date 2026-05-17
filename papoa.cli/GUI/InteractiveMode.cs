@@ -449,9 +449,7 @@ public class InteractiveMode(
     private static string? BrowseForFile(string title)
     {
         const string CancelLabel = "✗  Cancel";
-        const string DirPrefix = "📁 ";
-        const string FilePrefix = "📄 ";
-        const string ParentLabel = "📁 ..";
+        const string ParentLabel = "..";
 
         var currentDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (!Directory.Exists(currentDir))
@@ -463,18 +461,12 @@ public class InteractiveMode(
         {
             AnsiConsole.MarkupLine($"[grey]Current:[/] [yellow]{Markup.Escape(currentDir)}[/]");
 
-            var choices = new List<string> { CancelLabel };
-            if (Directory.GetParent(currentDir) != null)
-                choices.Add(ParentLabel);
-
+            List<string> dirs = [];
+            List<string> files = [];
             try
             {
-                choices.AddRange(Directory.GetDirectories(currentDir)
-                    .OrderBy(d => d)
-                    .Select(d => DirPrefix + Path.GetFileName(d)));
-                choices.AddRange(Directory.GetFiles(currentDir)
-                    .OrderBy(f => f)
-                    .Select(f => FilePrefix + Path.GetFileName(f)));
+                dirs = [.. Directory.GetDirectories(currentDir).OrderBy(d => d)];
+                files = [.. Directory.GetFiles(currentDir).OrderBy(f => f)];
             }
             catch (UnauthorizedAccessException)
             {
@@ -483,11 +475,25 @@ public class InteractiveMode(
                 continue;
             }
 
+            var dirSet = new HashSet<string>(dirs);
+            var rawChoices = new List<string> { CancelLabel };
+            if (Directory.GetParent(currentDir) != null)
+                rawChoices.Add(ParentLabel);
+            rawChoices.AddRange(dirs);
+            rawChoices.AddRange(files);
+
             var choice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .PageSize(18)
                     .HighlightStyle("cyan1")
-                    .AddChoices(choices));
+                    .UseConverter(c => c switch
+                    {
+                        CancelLabel => c,
+                        ParentLabel => "📁 ..",
+                        _ when dirSet.Contains(c) => "📁 " + Markup.Escape(Path.GetFileName(c)),
+                        _ => "📄 " + Markup.Escape(Path.GetFileName(c)),
+                    })
+                    .AddChoices(rawChoices));
 
             if (choice == CancelLabel)
                 return null;
@@ -498,13 +504,13 @@ public class InteractiveMode(
                 continue;
             }
 
-            if (choice.StartsWith(DirPrefix))
+            if (dirSet.Contains(choice))
             {
-                currentDir = Path.Combine(currentDir, choice[DirPrefix.Length..]);
+                currentDir = choice;
                 continue;
             }
 
-            return Path.Combine(currentDir, choice[FilePrefix.Length..]);
+            return choice;
         }
     }
 
@@ -514,9 +520,7 @@ public class InteractiveMode(
     private static List<string> BrowseForFiles(string title)
     {
         const string DoneLabel = "✓  Done";
-        const string DirPrefix = "📁 ";
-        const string FilePrefix = "📄 ";
-        const string ParentLabel = "📁 ..";
+        const string ParentLabel = "..";
 
         var selected = new List<string>();
         var currentDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -534,18 +538,12 @@ public class InteractiveMode(
             AnsiConsole.MarkupLine($"[grey]Current:[/] [yellow]{Markup.Escape(currentDir)}[/]");
             AnsiConsole.MarkupLine($"[grey]Selected:[/] {selectedLabel}");
 
-            var choices = new List<string> { DoneLabel };
-            if (Directory.GetParent(currentDir) != null)
-                choices.Add(ParentLabel);
-
+            List<string> dirs = [];
+            List<string> files = [];
             try
             {
-                choices.AddRange(Directory.GetDirectories(currentDir)
-                    .OrderBy(d => d)
-                    .Select(d => DirPrefix + Path.GetFileName(d)));
-                choices.AddRange(Directory.GetFiles(currentDir)
-                    .OrderBy(f => f)
-                    .Select(f => FilePrefix + Path.GetFileName(f)));
+                dirs = [.. Directory.GetDirectories(currentDir).OrderBy(d => d)];
+                files = [.. Directory.GetFiles(currentDir).OrderBy(f => f)];
             }
             catch (UnauthorizedAccessException)
             {
@@ -554,11 +552,25 @@ public class InteractiveMode(
                 continue;
             }
 
+            var dirSet = new HashSet<string>(dirs);
+            var rawChoices = new List<string> { DoneLabel };
+            if (Directory.GetParent(currentDir) != null)
+                rawChoices.Add(ParentLabel);
+            rawChoices.AddRange(dirs);
+            rawChoices.AddRange(files);
+
             var choice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .PageSize(18)
                     .HighlightStyle("cyan1")
-                    .AddChoices(choices));
+                    .UseConverter(c => c switch
+                    {
+                        DoneLabel => c,
+                        ParentLabel => "📁 ..",
+                        _ when dirSet.Contains(c) => "📁 " + Markup.Escape(Path.GetFileName(c)),
+                        _ => "📄 " + Markup.Escape(Path.GetFileName(c)),
+                    })
+                    .AddChoices(rawChoices));
 
             if (choice == DoneLabel)
                 break;
@@ -569,22 +581,21 @@ public class InteractiveMode(
                 continue;
             }
 
-            if (choice.StartsWith(DirPrefix))
+            if (dirSet.Contains(choice))
             {
-                currentDir = Path.Combine(currentDir, choice[DirPrefix.Length..]);
+                currentDir = choice;
                 continue;
             }
 
-            // File selected
-            var fullPath = Path.Combine(currentDir, choice[FilePrefix.Length..]);
-            if (selected.Contains(fullPath))
+            // File selected — choice is the full absolute path
+            if (selected.Contains(choice))
             {
-                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(Path.GetFileName(fullPath))} is already added.[/]");
+                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(Path.GetFileName(choice))} is already added.[/]");
             }
             else
             {
-                selected.Add(fullPath);
-                AnsiConsole.MarkupLine($"[green]Added:[/] {Markup.Escape(Path.GetFileName(fullPath))}");
+                selected.Add(choice);
+                AnsiConsole.MarkupLine($"[green]Added:[/] {Markup.Escape(Path.GetFileName(choice))}");
             }
 
             if (!AnsiConsole.Confirm("Add another file?", defaultValue: false))
