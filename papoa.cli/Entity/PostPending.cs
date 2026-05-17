@@ -3,8 +3,15 @@ namespace Papoa.Entity;
 public class PostPending
 {
     public string Title { get; set; } = string.Empty;
-    public string Text { get; set; } = string.Empty;
-    public string TextFormat { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public string ContentFormat { get; set; } = string.Empty;
+    public bool IsPublic { get; set; }
+    public List<string> TierNames { get; set; } = [];
+    public List<string> CollectionNames { get; set; } = [];
+    public string? PublishDateUtc { get; set; }
+    public List<string> Tags { get; set; } = [];
     public List<PostFile> AddFiles { get; set; } = [];
     public List<PostFile> RemoveFiles { get; set; } = [];
+    public List<string> PhotoAttachmentFileNames { get; set; } = [];
+    public List<string> AttachmentFileNames { get; set; } = [];
 }

@@ -4,6 +4,8 @@ namespace Papoa.Contract;
 
 public interface IPrintingService
 {
-    string StringProp(string current, string? pending);
-    string FilesProp(List<PostFile> current, List<PostFile>? add, List<PostFile>? remove);
+    string FilesProp(List<PostFile> files);
+    void PrintMessage(string message, string outputFormat);
+    void PrintPost(Post post, string outputFormat);
+    void PrintPosts(List<Post> posts, string outputFormat);
 }

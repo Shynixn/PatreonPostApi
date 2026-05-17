@@ -21,7 +21,7 @@ export class PostService {
       ? body.data
       : [];
     return posts
-      .filter((p) => p.pending != null)
+      .filter((p) => p.status === "pending")
       .sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -41,17 +41,17 @@ export class PostService {
     return body?.data as PostGetResultDTO;
   }
 
-  async confirmPost(post: PostGetResultDTO, patreonPostId?: string): Promise<void> {
-    const pending = post.pending;
-    if (!pending) return;
+  async confirmPost(
+    post: PostGetResultDTO,
+    patreonPostId?: string,
+  ): Promise<void> {
     const body: PostUpdateRequestDTO = {
-      title: pending.title,
-      text: pending.text,
-      textFormat: pending.textFormat,
+      title: post.title,
+      status: "published",
       patreonPostId,
     };
     const response = await fetch(
-      `${this.baseUrl}/api/v1/post/${encodeURIComponent(post.id)}?confirm=true`,
+      `${this.baseUrl}/api/v1/post/${encodeURIComponent(post.id)}`,
       {
         method: "PUT",
         headers: this.headers,

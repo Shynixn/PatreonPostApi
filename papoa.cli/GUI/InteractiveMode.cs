@@ -82,28 +82,7 @@ public class InteractiveMode(
             return;
         }
 
-        var table = new Table()
-            .Border(TableBorder.Rounded)
-            .BorderColor(Color.Grey)
-            .AddColumn(new TableColumn("[bold]Id[/]"))
-            .AddColumn(new TableColumn("[bold]Title[/]"))
-            .AddColumn(new TableColumn("[bold]Text[/]"))
-            .AddColumn(new TableColumn("[bold]Files[/]"))
-            .AddColumn(new TableColumn("[bold]Created At[/]"))
-            .AddColumn(new TableColumn("[bold]Patreon Updated At[/]"));
-
-        foreach (var post in posts)
-        {
-            table.AddRow(
-                new Text(post.Id),
-                new Text(printingService.StringProp(post.Title, post.Pending?.Title)),
-                new Text(Truncate(printingService.StringProp(post.Text, post.Pending?.Text), 50)),
-                new Text(printingService.FilesProp(post.Files, post.Pending?.AddFiles, post.Pending?.RemoveFiles)),
-                new Text(post.CreatedAt),
-                new Text(post.PatreonUpdatedAt ?? "-"));
-        }
-
-        AnsiConsole.Write(table);
+        printingService.PrintPosts(posts, "text/plain");
         Pause();
     }
 
@@ -117,16 +96,79 @@ public class InteractiveMode(
         var title = AnsiConsole.Prompt(
             new TextPrompt<string>("Title:"));
 
-        var text = AnsiConsole.Prompt(
-            new TextPrompt<string>("Text [grey](optional)[/]:")
-                .AllowEmpty());
-
-        var textFormat = AnsiConsole.Prompt(
+        var contentInputMode = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
-                .Title("Text format:")
-                .AddChoices("text/plain", "text/markdown"));
+                .Title("Post content:")
+                .HighlightStyle("cyan1")
+                .AddChoices("None", "Inline text", "Text file"));
+
+        string content = string.Empty;
+        string contentFormat = "text/plain";
+
+        if (contentInputMode == "Inline text")
+        {
+            content = AnsiConsole.Prompt(
+                new TextPrompt<string>("Content [grey](optional)[/]:")
+                    .AllowEmpty());
+
+            contentFormat = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Content format:")
+                    .AddChoices("text/plain", "text/markdown"));
+        }
+        else if (contentInputMode == "Text file")
+        {
+            var contentFile = BrowseForFile("Select post content file:");
+            if (contentFile != null)
+            {
+                try
+                {
+                    content = await File.ReadAllTextAsync(contentFile);
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Could not read file: {Markup.Escape(ex.Message)}[/]");
+                    Pause();
+                    return;
+                }
+            }
+
+            contentFormat = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Content format:")
+                    .AddChoices("text/plain", "text/markdown"));
+        }
+
+        var isPublic = AnsiConsole.Confirm("Is the post public (available to everyone)?\n[grey]No = restricted to paying Patreons only[/]", defaultValue: false);
+
+        List<string> tierNames = [];
+        if (!isPublic)
+        {
+            tierNames = PromptForStringList("Tier names [grey](which tiers can access this post)[/]");
+        }
+
+        var collectionNames = PromptForStringList("Collection names [grey](collections this post belongs to)[/]");
 
         var addFiles = BrowseForFiles("Add files to attach:");
+
+        List<string> photoAttachmentFileNames = [];
+        List<string> attachmentFileNames = [];
+        if (addFiles.Count > 0)
+        {
+            var fileNames = addFiles.Select(f => Path.GetFileName(f) ?? f).ToList();
+
+            photoAttachmentFileNames = AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("Which files should be [bold]photo attachments[/]? [grey](space to toggle, enter to confirm)[/]")
+                    .NotRequired()
+                    .AddChoices(fileNames));
+
+            attachmentFileNames = AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("Which files should be [bold]regular attachments[/]? [grey](space to toggle, enter to confirm)[/]")
+                    .NotRequired()
+                    .AddChoices(fileNames));
+        }
 
         string? password = null;
         if (AnsiConsole.Confirm("Encrypt with password?", defaultValue: false))
@@ -134,13 +176,34 @@ public class InteractiveMode(
             password = AnsiConsole.Prompt(new TextPrompt<string>("Password:").Secret());
         }
 
+        // Pre-encrypt so the size sent to the API matches the uploaded payload.
+        var preparedFiles = new List<(string Path, byte[]? Bytes, long Size)>();
+        foreach (var path in addFiles)
+        {
+            if (password is not null)
+            {
+                var raw = await File.ReadAllBytesAsync(path);
+                var enc = fileUploadService.Encrypt(raw, password);
+                preparedFiles.Add((path, enc, enc.Length));
+            }
+            else
+            {
+                preparedFiles.Add((path, null, new FileInfo(path).Length));
+            }
+        }
+
         var request = new PostCreateRequest
         {
             Title = title,
-            Text = text,
-            TextFormat = textFormat,
+            Content = content,
+            ContentFormat = contentFormat,
+            IsPublic = isPublic,
+            TierNames = tierNames.Count > 0 ? tierNames : null,
+            CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
             Encrypted = password != null,
-            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f) }).ToList(),
+            Files = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
+            PhotoAttachmentFileNames = photoAttachmentFileNames.Count > 0 ? photoAttachmentFileNames : null,
+            AttachmentFileNames = attachmentFileNames.Count > 0 ? attachmentFileNames : null,
         };
 
         PostCreateResult? result = null;
@@ -161,11 +224,9 @@ public class InteractiveMode(
 
         if (result != null)
         {
-            await UploadFilesAsync(result.UploadUrls, addFiles, password);
-            var post = result.Post;
+            await UploadFilesAsync(result.UploadUrls, preparedFiles);
             AnsiConsole.MarkupLine("[green]Post created![/]");
-            AnsiConsole.MarkupLine($"  [bold]Id:[/]    {Markup.Escape(post.Id)}");
-            AnsiConsole.MarkupLine($"  [bold]Title:[/] {Markup.Escape(printingService.StringProp(post.Title, post.Pending?.Title))}");
+            printingService.PrintPost(result.Post, "text/plain");
         }
 
         Pause();
@@ -185,34 +246,78 @@ public class InteractiveMode(
             new TextPrompt<string>("Title:")
                 .DefaultValue(post.Title));
 
-        var text = AnsiConsole.Prompt(
-            new TextPrompt<string>("Text:")
-                .AllowEmpty()
-                .DefaultValue(post.Text));
-
-        var textFormat = AnsiConsole.Prompt(
+        var contentInputMode = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
-                .Title("Text format:")
-                .AddChoices("text/plain", "text/markdown"));
+                .Title("Post content:")
+                .HighlightStyle("cyan1")
+                .AddChoices("Keep existing", "Inline text", "Text file"));
 
-        var addFiles = BrowseForFiles("Add files to attach:");
+        string content = post.Content;
+        string contentFormat = post.ContentFormat;
 
-        var removeFiles = PromptForRemoveFiles();
-
-        string? password = null;
-        if (AnsiConsole.Confirm("Encrypt with password?", defaultValue: false))
+        if (contentInputMode == "Inline text")
         {
-            password = AnsiConsole.Prompt(new TextPrompt<string>("Password:").Secret());
+            content = AnsiConsole.Prompt(
+                new TextPrompt<string>("Content:")
+                    .AllowEmpty()
+                    .DefaultValue(post.Content));
+
+            contentFormat = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Content format:")
+                    .AddChoices("text/plain", "text/markdown"));
+        }
+        else if (contentInputMode == "Text file")
+        {
+            var contentFile = BrowseForFile("Select post content file:");
+            if (contentFile != null)
+            {
+                try
+                {
+                    content = await File.ReadAllTextAsync(contentFile);
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Could not read file: {Markup.Escape(ex.Message)}[/]");
+                    Pause();
+                    return;
+                }
+            }
+
+            contentFormat = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Content format:")
+                    .AddChoices("text/plain", "text/markdown"));
+        }
+
+        var isPublic = AnsiConsole.Confirm("Is the post public (available to everyone)?\n[grey]No = restricted to paying Patreons only[/]", defaultValue: post.IsPublic);
+
+        List<string> tierNames = [];
+        if (!isPublic)
+        {
+            AnsiConsole.MarkupLine($"[grey]Current tier names: {(post.TierNames.Count > 0 ? string.Join(", ", post.TierNames) : "none")}[/]");
+            tierNames = PromptForStringList("Tier names [grey](which tiers can access this post)[/]");
+        }
+
+        AnsiConsole.MarkupLine($"[grey]Current collection names: {(post.CollectionNames.Count > 0 ? string.Join(", ", post.CollectionNames) : "none")}[/]");
+        var collectionNames = PromptForStringList("Collection names [grey](collections this post belongs to)[/]");
+
+        string? status = null;
+        if (AnsiConsole.Confirm("Mark as published (confirm post)?", defaultValue: false))
+        {
+            status = "published";
         }
 
         var request = new PostUpdateRequest
         {
             Id = post.Id,
             Title = title,
-            Text = text,
-            TextFormat = textFormat,
-            AddFiles = addFiles.Select(f => new PostFile { Name = Path.GetFileName(f) }).ToList(),
-            RemoveFiles = removeFiles.Select(n => new PostFile { Name = n }).ToList(),
+            Content = content,
+            ContentFormat = contentFormat,
+            IsPublic = isPublic,
+            TierNames = tierNames.Count > 0 ? tierNames : null,
+            CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
+            Status = status,
         };
 
         PostUpdateResult? result = null;
@@ -233,8 +338,8 @@ public class InteractiveMode(
 
         if (result != null)
         {
-            await UploadFilesAsync(result.UploadUrls, addFiles, password);
             AnsiConsole.MarkupLine("[green]Post updated![/]");
+            printingService.PrintPost(result.Post, "text/plain");
         }
 
         Pause();
@@ -307,35 +412,106 @@ public class InteractiveMode(
     }
 
     /// <summary>
-    /// Text-input loop for entering filenames to remove. Enter a blank line to finish.
+    /// Text-input loop for entering a list of strings. Enter a blank line to finish.
     /// </summary>
-    private static List<string> PromptForRemoveFiles()
+    private static List<string> PromptForStringList(string title)
     {
-        var files = new List<string>();
-        AnsiConsole.MarkupLine("[bold]Remove files[/] [grey](enter filename to remove, leave blank to finish)[/]");
+        var items = new List<string>();
+        AnsiConsole.MarkupLine($"[bold]{title}[/] [grey](enter value, leave blank to finish)[/]");
 
         while (true)
         {
-            var name = AnsiConsole.Prompt(
-                new TextPrompt<string>("Filename to remove [grey](blank = done)[/]:")
+            var value = AnsiConsole.Prompt(
+                new TextPrompt<string>("Value [grey](blank = done)[/]:")
                     .AllowEmpty());
 
-            if (string.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(value))
                 break;
 
-            var trimmed = name.Trim();
-            if (files.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+            var trimmed = value.Trim();
+            if (items.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
             {
-                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(trimmed)} already added to removal list.[/]");
+                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(trimmed)} already in the list.[/]");
             }
             else
             {
-                files.Add(trimmed);
-                AnsiConsole.MarkupLine($"[red]Will remove:[/] {Markup.Escape(trimmed)}");
+                items.Add(trimmed);
+                AnsiConsole.MarkupLine($"[green]Added:[/] {Markup.Escape(trimmed)}");
             }
         }
 
-        return files;
+        return items;
+    }
+
+    /// <summary>
+    /// Arrow-key file browser that returns a single selected file path, or null if cancelled.
+    /// </summary>
+    private static string? BrowseForFile(string title)
+    {
+        const string CancelLabel = "✗  Cancel";
+        const string ParentLabel = "..";
+
+        var currentDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!Directory.Exists(currentDir))
+            currentDir = Directory.GetCurrentDirectory();
+
+        AnsiConsole.MarkupLine($"[bold]{Markup.Escape(title)}[/] [grey](arrows to navigate, enter to select, ✗ Cancel to skip)[/]");
+
+        while (true)
+        {
+            AnsiConsole.MarkupLine($"[grey]Current:[/] [yellow]{Markup.Escape(currentDir)}[/]");
+
+            List<string> dirs = [];
+            List<string> files = [];
+            try
+            {
+                dirs = [.. Directory.GetDirectories(currentDir).OrderBy(d => d)];
+                files = [.. Directory.GetFiles(currentDir).OrderBy(f => f)];
+            }
+            catch (UnauthorizedAccessException)
+            {
+                AnsiConsole.MarkupLine("[red]Access denied.[/]");
+                currentDir = Directory.GetParent(currentDir)?.FullName ?? currentDir;
+                continue;
+            }
+
+            var dirSet = new HashSet<string>(dirs);
+            var rawChoices = new List<string> { CancelLabel };
+            if (Directory.GetParent(currentDir) != null)
+                rawChoices.Add(ParentLabel);
+            rawChoices.AddRange(dirs);
+            rawChoices.AddRange(files);
+
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .PageSize(18)
+                    .HighlightStyle("cyan1")
+                    .UseConverter(c => c switch
+                    {
+                        CancelLabel => c,
+                        ParentLabel => "📁 ..",
+                        _ when dirSet.Contains(c) => "📁 " + Markup.Escape(Path.GetFileName(c)),
+                        _ => "📄 " + Markup.Escape(Path.GetFileName(c)),
+                    })
+                    .AddChoices(rawChoices));
+
+            if (choice == CancelLabel)
+                return null;
+
+            if (choice == ParentLabel)
+            {
+                currentDir = Directory.GetParent(currentDir)!.FullName;
+                continue;
+            }
+
+            if (dirSet.Contains(choice))
+            {
+                currentDir = choice;
+                continue;
+            }
+
+            return choice;
+        }
     }
 
     /// <summary>
@@ -344,9 +520,7 @@ public class InteractiveMode(
     private static List<string> BrowseForFiles(string title)
     {
         const string DoneLabel = "✓  Done";
-        const string DirPrefix = "📁 ";
-        const string FilePrefix = "📄 ";
-        const string ParentLabel = "📁 ..";
+        const string ParentLabel = "..";
 
         var selected = new List<string>();
         var currentDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -364,18 +538,12 @@ public class InteractiveMode(
             AnsiConsole.MarkupLine($"[grey]Current:[/] [yellow]{Markup.Escape(currentDir)}[/]");
             AnsiConsole.MarkupLine($"[grey]Selected:[/] {selectedLabel}");
 
-            var choices = new List<string> { DoneLabel };
-            if (Directory.GetParent(currentDir) != null)
-                choices.Add(ParentLabel);
-
+            List<string> dirs = [];
+            List<string> files = [];
             try
             {
-                choices.AddRange(Directory.GetDirectories(currentDir)
-                    .OrderBy(d => d)
-                    .Select(d => DirPrefix + Path.GetFileName(d)));
-                choices.AddRange(Directory.GetFiles(currentDir)
-                    .OrderBy(f => f)
-                    .Select(f => FilePrefix + Path.GetFileName(f)));
+                dirs = [.. Directory.GetDirectories(currentDir).OrderBy(d => d)];
+                files = [.. Directory.GetFiles(currentDir).OrderBy(f => f)];
             }
             catch (UnauthorizedAccessException)
             {
@@ -384,11 +552,25 @@ public class InteractiveMode(
                 continue;
             }
 
+            var dirSet = new HashSet<string>(dirs);
+            var rawChoices = new List<string> { DoneLabel };
+            if (Directory.GetParent(currentDir) != null)
+                rawChoices.Add(ParentLabel);
+            rawChoices.AddRange(dirs);
+            rawChoices.AddRange(files);
+
             var choice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .PageSize(18)
                     .HighlightStyle("cyan1")
-                    .AddChoices(choices));
+                    .UseConverter(c => c switch
+                    {
+                        DoneLabel => c,
+                        ParentLabel => "📁 ..",
+                        _ when dirSet.Contains(c) => "📁 " + Markup.Escape(Path.GetFileName(c)),
+                        _ => "📄 " + Markup.Escape(Path.GetFileName(c)),
+                    })
+                    .AddChoices(rawChoices));
 
             if (choice == DoneLabel)
                 break;
@@ -399,22 +581,21 @@ public class InteractiveMode(
                 continue;
             }
 
-            if (choice.StartsWith(DirPrefix))
+            if (dirSet.Contains(choice))
             {
-                currentDir = Path.Combine(currentDir, choice[DirPrefix.Length..]);
+                currentDir = choice;
                 continue;
             }
 
-            // File selected
-            var fullPath = Path.Combine(currentDir, choice[FilePrefix.Length..]);
-            if (selected.Contains(fullPath))
+            // File selected — choice is the full absolute path
+            if (selected.Contains(choice))
             {
-                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(Path.GetFileName(fullPath))} is already added.[/]");
+                AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(Path.GetFileName(choice))} is already added.[/]");
             }
             else
             {
-                selected.Add(fullPath);
-                AnsiConsole.MarkupLine($"[green]Added:[/] {Markup.Escape(Path.GetFileName(fullPath))}");
+                selected.Add(choice);
+                AnsiConsole.MarkupLine($"[green]Added:[/] {Markup.Escape(Path.GetFileName(choice))}");
             }
 
             if (!AnsiConsole.Confirm("Add another file?", defaultValue: false))
@@ -424,16 +605,21 @@ public class InteractiveMode(
         return selected;
     }
 
-    private async Task UploadFilesAsync(List<PostUploadSession> uploadUrls, List<string> filePaths, string? password)
+    private async Task UploadFilesAsync(
+        List<PostUploadSession> uploadUrls,
+        List<(string Path, byte[]? Bytes, long Size)> preparedFiles)
     {
         for (var i = 0; i < uploadUrls.Count; i++)
         {
             var session = uploadUrls[i];
-            var filePath = filePaths[i];
+            var (filePath, encryptedBytes, _) = preparedFiles[i];
             await AnsiConsole.Status()
                 .StartAsync($"Uploading [cyan1]{Markup.Escape(Path.GetFileName(filePath))}[/]...", async _ =>
                 {
-                    await fileUploadService.UploadFileAsync(session, filePath, password);
+                    if (encryptedBytes is not null)
+                        await fileUploadService.UploadBytesAsync(session, encryptedBytes, Path.GetFileName(filePath));
+                    else
+                        await fileUploadService.UploadFileAsync(session, filePath, null);
                 });
             AnsiConsole.MarkupLine($"  Uploaded [cyan1]{Markup.Escape(Path.GetFileName(filePath))}[/].");
         }

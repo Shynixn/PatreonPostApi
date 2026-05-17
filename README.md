@@ -1,6 +1,16 @@
-<h1><img src="papoa.resources/icon.png" alt="Papoa icon" width="56" /> PatreonPostApi (Unofficial) - Papoa</h1>
-
-PatreonPost API (Papoa) allows you to programmatically prepare and publish posts on patreon.com. This project is not affiliated with Patreon.
+<div align="center">
+  <img src="papoa.resources/icon.png" alt="Papoa icon" width="96" />
+  <h1>Papoa</h1>
+  <p>
+    <img src="https://img.shields.io/badge/Chrome%20Extension-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome Extension" />
+    <img src="https://img.shields.io/badge/REST%20API-005571?style=flat-square&logo=openapiinitiative&logoColor=white" alt="REST API" />
+    <img src="https://img.shields.io/badge/CLI-Windows%20%7C%20Linux%20%7C%20Mac-6a0dad?style=flat-square&logo=windowsterminal&logoColor=white" alt="CLI" />
+    <img src="https://img.shields.io/badge/license-AGPL--3.0-green?style=flat-square" alt="License" />
+  </p>
+  <p>Programmatically prepare, publish and update posts on patreon.com.<br/>
+  <sub>This project is not affiliated with patreon.com</sub></p>
+  <hr/>
+</div>
 
 ## Background
 
@@ -25,158 +35,277 @@ The **Chrome extension is fully public** in this repository, so you can inspect 
 
 You do **not send Patreon credentials** to this service. Authentication stays **inside your own browser session**, and the extension operates **locally** in that session. From Patreon's point of view, this behaves like a browser automation or text autofill helper acting inside a **real, logged-in browser**, rather than a third-party service impersonating your account.
 
-## Obtaining an API Key
+## Install and Create Your First Post
 
-1. Visit [papoa.shynixn.com](https://papoa.shynixn.com/) and agree to the terms of service.
-2. Your free-tier API key will be shown after acceptance. For higher limits, subscribe to a membership at [patreon.com/c/shynixn/membership](https://www.patreon.com/c/shynixn/membership) and your key will be upgraded automatically.
+### Step 1 — Get Your API Key
 
-### Service Limits
+Visit [papoa.shynixn.com](https://papoa.shynixn.com/) and agree to the terms of service. Your free-tier API key will be shown after acceptance.
 
-| Tier      | API Requests / Day | Upload Limit   | Posts       |
-| --------- | ------------------ | -------------- | ----------- |
-| Free      | 300                | 10 MB / year   | 2 / year    |
-| Basic     | 300                | 100 MB / month | 31 / month  |
-| Elite     | 500                | 300 MB / month | 200 / month |
-| Legendary | 500                | 600 MB / month | 500 / month |
+For higher limits, subscribe to a membership at [patreon.com/c/shynixn/membership](https://www.patreon.com/c/shynixn/membership) and your key will be upgraded on re-login on [papoa.shynixn.com](https://papoa.shynixn.com/).
 
-## CLI (GUI)
+| Tier      | API Requests / Day | Posts / Month | Upload Limit / Month |
+| --------- | ------------------ | ------------- | -------------------- |
+| Free      | 300                | 1             | 5 MB                 |
+| Basic     | 300                | 100           | 500 MB               |
+| Elite     | 500                | 200           | 2 GB                 |
+| Legendary | 500                | 500           | 5 GB                 |
 
-Executing the `papoa.exe` (or the executable for other operating systems) opens an interactive gui to manage your posts. Navigate using the arrow keys on your keyboard.
+### Step 2 — Download the CLI
 
-## CLI (Automation)
+Download the latest release for your platform from [GitHub Releases](https://github.com/Shynixn/PatreonPostApi/releases/latest).
 
-For automation purposes, the CLI offers the following non interactivecommands:
+### Step 3 — Configure the CLI
 
-### Configuration
+The CLI contains an non-interactive mode for automations and an interactive, guided mode for basic operations. The guide here uses the interactive mode, but you should consider using the non-interactive mode in most scenarious.
 
-| Environment Variable | Required | Description                        | Default                         |
-| -------------------- | -------- | ---------------------------------- | ------------------------------- |
-| `PAPOA_BASE_URL`     | No       | Base URL of the Papoa API          | `https://api.papoa.shynixn.com` |
-| `PAPOA_API_KEY`      | Yes      | API key sent as `x-api-key` header | —                               |
-
-### Commands
-
-#### `post create`
-
-Creates a new post and uploads any attached files.
-
-```
-papoa post create --title <title> [options]
-```
-
-| Option                    | Required | Description                                           |
-| ------------------------- | -------- | ----------------------------------------------------- |
-| `--title <value>`         | Yes      | Title of the post                                     |
-| `--text <value>`          | No       | Body text of the post                                 |
-| `--text-file <path>`      | No       | Read body text from a file (overrides `--text`)       |
-| `--text-format <value>`   | No       | `text/plain` (default) or `text/markdown`             |
-| `--file <path>`           | No       | File to attach (repeat for multiple files)            |
-| `--password <value>`      | No       | Encrypt attached files with AES-256-CBC before upload |
-| `--output-format <value>` | No       | Output format: `text/plain` (default)                 |
-
-> When `--password` is supplied, files are encrypted client-side with AES-256-CBC before leaving your
-> machine. The Papoa service stores only the ciphertext and cannot read your file contents. It is **highly** recommended to use `--password` when using the CLI. It protects you against potential leaks of your valuable files.
-
-**Example**
-
-```bash
-papoa post create --title "My Post" --text-file post.md --text-format text/markdown --file image.png --password "my-secret"
-```
-
-**post.md**
-
-```markdown
-# April Update — New Chapter & Behind-the-Scenes
-
-Hey everyone! 👋
-
-This month's update is finally here, and I'm excited to share what I've been working on.
-
-## What's New
-
-- Finished the first draft of Chapter 12 — it's the longest one yet
-- Added 3 new behind-the-scenes photos from last week's shoot
-- Early access to the next episode is attached below
-
-## A Note from Me
-
-Thank you so much for your continued support — it genuinely makes this possible.
-If you have feedback or requests for next month, drop them in the comments!
-
-— Alex
-```
+For the full CLI reference, non interactive, see the [CLI documentation](papoa.docs/CLI.md) and [Test examples](papoa.docs/TEST.md)
 
 ---
 
-#### `post update`
+Open the interactive version of the CLI by just starting the downloaded CLI without any arguments.
 
-Updates an existing post by ID.
+e.g. for windows, double click the `papoa-win-x64.exe` file
 
-```
-papoa post update --id <id> --title <title> [options]
-```
-
-| Option                    | Required | Description                                           |
-| ------------------------- | -------- | ----------------------------------------------------- |
-| `--id <value>`            | Yes      | ID of the post to update                              |
-| `--title <value>`         | Yes      | New title                                             |
-| `--text <value>`          | No       | New body text                                         |
-| `--text-file <path>`      | No       | Read body text from a file (overrides `--text`)       |
-| `--text-format <value>`   | No       | `text/plain` (default) or `text/markdown`             |
-| `--file <path>`           | No       | File to attach (repeat for multiple files)            |
-| `--password <value>`      | No       | Encrypt attached files with AES-256-CBC before upload |
-| `--output-format <value>` | No       | Output format: `text/plain` (default)                 |
-
-> When `--password` is supplied, files are encrypted with AES-256-CBC before upload. See the note under `post create` for details.
-
-**Example**
+It should prompt you for your API key.
 
 ```bash
-papoa post update --id abc123 --title "Updated Title" --text "New content" --password "my-secret"
+No API key found. Set the PAPOA_API_KEY environment variable, or enter one now.
+API key:
 ```
+
+```bash
+
+  ____
+ |  _ \    __ _   _ __     ___     __ _
+ | |_) |  / _` | | '_ \   / _ \   / _` |
+ |  __/  | (_| | | |_) | | (_) | | (_| |
+ |_|      \__,_| | .__/   \___/   \__,_|
+                 |_|
+
+Main Menu
+
+> Posts
+  Exit
+```
+
+Try the "list" command to see if the connection works as expected.
+
+```bash
+  ____
+ |  _ \    __ _   _ __     ___     __ _
+ | |_) |  / _` | | '_ \   / _ \   / _` |
+ |  __/  | (_| | | |_) | | (_) | | (_| |
+ |_|      \__,_| | .__/   \___/   \__,_|
+                 |_|
+
+
+No posts found.
+
+Press any key to continue...
+```
+
+### Step 4 — Install the Chrome Extension
+
+The CLI queues posts for the Chrome extension to publish on your behalf. [Follow the Chrome Extension Installation Guide](papoa.docs/ChromeExtension.md) to download, load, and configure the extension.
+
+### Step 5 — Create Your First Post
+
+Download these two sample files to get started:
+
+- [post.md](https://github.com/Shynixn/PatreonPostApi/raw/main/papoa.resources/post.md) — sample post body
+- [icon.png](https://github.com/Shynixn/PatreonPostApi/raw/main/papoa.resources/icon.png) — sample attached image
+
+Place both files in the same folder, then open the Papoa interactive GUI (double-click the executable or run it without arguments). Use **Posts → Create**.
+
+1. Enter a title and select Text file
+
+```bash
+Create Post
+
+Title: My first Papoa post
+Post text:
+
+  None
+  Inline text
+> Text file
+```
+
+2. Navigate to and select the `post.md` file — the browser closes immediately after selection
+
+3. Select text format markdown
+
+```bash
+Content format:
+
+  text/plain
+> text/markdown
+```
+
+4. Set other optional fields or leave them empty
+
+```bash
+Is the post public (available to everyone)?
+No = restricted to paying Patreons only [y/n] (n): n
+Tier names (which tiers can access this post) (enter value, leave blank to finish)
+Value (blank = done):
+Collection names (collections this post belongs to) (enter value, leave blank to finish)
+Value (blank = done):
+```
+
+4. Browse to and add the `icon.png` file, then choose **✓ Done**
+
+```bash
+Add files to attach: (arrows to navigate, enter to open/select, choose ✓ Done when finished)
+Current: /home/myuser
+Selected: none
+Current: /home/myuser/git
+Selected: none
+Current: /home/myuser/git/PatreonPostApi
+Selected: none
+Current: /home/myuser/git/PatreonPostApi/papoa.resources
+Selected: none
+Added: icon.png
+Add another file? [y/n] (n): n
+```
+
+5. Select which files should be photo attachments (spacebar to toggle, enter to confirm)
+
+```
+Which files should be photo attachments? (space to toggle, enter to confirm)
+> [x] icon.png
+```
+
+6. Select which files should be regular attachments
+
+```
+Which files should be regular attachments? (space to toggle, enter to confirm)
+> [x] icon.png
+```
+
+7. Encrypt with password and add a personal password. You should use the same password for all of your posts.
+
+```bash
+Encrypt with password? [y/n] (n): y
+Password: ****
+```
+
+8. Success — all post fields are printed
+
+```
+  Uploaded icon.png.
+Post created!
+  Id:                    017ef6005bf8435b8f0f541a81e3cef3
+  Title:                 My first Papoa post
+  Content:               # April Update — New Chapter & Behind-the-S…
+  Content Format:        text/markdown
+  Status:                pending
+  Is Public:             False
+  Encrypted:             True
+  Files:                 [icon.png]
+  ...
+```
+
+9. Use Post List to see all of your already created posts
+
+```
+  Id:                    017ef6005bf8435b8f0f541a81e3cef3
+  Title:                 My first Papoa post
+  Content:               # April Update — New Chapter & Behind-the-S…
+  Content Format:        text/markdown
+  Status:                pending
+  Is Public:             False
+  Encrypted:             True
+  Files:                 [icon.png]
+  Photo Attachments:     icon.png
+  Attachments:           icon.png
+  Created At:            2026-05-09T18:05:56.977Z
+  Patreon Updated At:    -
+
+```
+
+- This post has not been posted to patreon.com yet. You can see that the `Patreon Updated At` timestamp is not a valid value yet.
+- Posts automatically vanish after 30 days from Papoa. They stay available in patreon.com but are no longer managed by Papoa.
+
+### Step 7 — Automated posting to patreon.com
+
+1. Click on the refresh button on the top right in the Papoa ChromeExtension to load your posts.
+
+<details>
+<summary>Screenshot — load posts</summary>
+
+![Extension active and polling for pending posts](papoa.docs/chromeextension8.png)
+
+</details>
+
+2. Open the settings page and go through each of this points.
+
+<details>
+<summary>Screenshot — settings page</summary>
+
+![Extension settings page](papoa.docs/chromeextension6.png)
+
+</details>
+
+**Patreon checklist**
+
+Before continuing, make sure:
+
+- You are logged into patreon.com in this browser.
+- Your Patreon language is set to `English (United States)` — you can check this at https://www.patreon.com/settings/account.
+- You accept that the extension cannot be held responsible if a post is published with incorrect settings (e.g. wrong tier permissions).
+
+**Settings explained**
+
+| Setting                 | What it does                                                                                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Decryption password** | If you encrypted your files with a password in the CLI, enter that same password here so the extension can decrypt them before attaching.                   |
+| **Background fetch**    | The extension automatically opens a new Patreon tab, fills in the post, and waits. You still need to click **Post** yourself. Use this for semi-automation. |
+| **Auto-submit**         | The extension fills in the post _and_ clicks **Post** automatically — no user input needed. Combine with **Background fetch** for fully autonomous posting. |
+
+> **Note:** Patreon can change their website at any time, which may temporarily break auto-submit. Always check your posts after publishing.
+
+For this first test post, **leave both Background fetch and Auto-submit disabled**. This lets you review the filled-in post before submitting it yourself.
+
+3. Click **Post to patreon.com** to queue the post for publishing.
 
 ---
 
-#### `post delete`
+## Helpful Links
 
-Deletes a post by ID.
+- For the full CLI command reference, see the [CLI documentation](papoa.docs/CLI.md).
+- For the Test set, a list of examples, see the [TEST documentation](papoa.docs/TEST.md)
+- For the REST API reference used by the CLI (and for building your own integrations), see the [API documentation](papoa.docs/API.md).
 
-```
-papoa post delete --id <id> [options]
-```
+## Questions and Answers
 
-| Option                    | Required | Description                           |
-| ------------------------- | -------- | ------------------------------------- |
-| `--id <value>`            | Yes      | ID of the post to delete              |
-| `--output-format <value>` | No       | Output format: `text/plain` (default) |
+**The Chromeextension does not fill in anything?**
 
-**Example**
-
-```bash
-papoa post delete --id abc123
-```
+Make sure your Patreon language is set to English (United States) — you can check this at https://www.patreon.com/settings/account.
 
 ---
 
-#### `post list`
+**How long do I have to publish the post after sending it to Papoa?**
 
-Lists all posts, or retrieves a single post if `--id` is provided.
+You have **24 hours**. After that, any files attached to the post are permanently deleted from Papoa. The post metadata may remain accessible depending on your TTL setting, but the uploaded files are gone. Make sure the Chrome extension processes the post promptly after creation.
 
-```
-papoa post list [options]
-```
+---
 
-| Option                    | Required | Description                           |
-| ------------------------- | -------- | ------------------------------------- |
-| `--id <value>`            | No       | ID of a specific post to retrieve     |
-| `--output-format <value>` | No       | Output format: `text/plain` (default) |
+**How long can I update a post?**
 
-**Examples**
+The default TTL (time-to-live) for post metadata in Papoa is **30 days**. You can reduce this to as few as **1 day** or extend it to up to **90 days** using the `--ttl-days` option on `post create`. Within the TTL window you can update metadata — visibility, tiers, tags, content — but you cannot change the attached files. Those are fixed at creation time.
 
-```bash
-# List all posts
-papoa post list
+---
 
-# Get a specific post
-papoa post list --id abc123
-```
+**What if patreon.com updates their website? Will this extension break?**
+
+Yes, expect it to break in the future, potentially multiple times. Patreon can change their page structure, element names, or interaction flows at any time, and the Chrome extension relies on those details to automate the form. When that happens, wait until this app is updated, download the new files, and rerun your post. **Do not enable Auto-submit if your business depends on reliable automation** — instead, review the filled-in draft manually and click **Post** yourself.
+
+---
+
+## Limits
+
+This service does not support all functionalities of patreon.com web editor. Please test your use case using the free tier and submit feature requests by Github Issues. You can update the 1 free post per month multiple times and test different automation use cases. If you delete your post, you are going to loose access to it.
+
+## Final Notes
+
+Thank you for using Papoa — I hope it saves you as much time as it saves me. If you run into issues or have ideas, feel free to open an issue on GitHub. You can also message me via private message on https://patreon.com/c/Shynixn

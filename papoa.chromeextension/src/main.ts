@@ -147,7 +147,6 @@ function createPostCard(
   post: PostGetResultDTO,
   onPostToPatreon: (post: PostGetResultDTO) => Promise<void>,
 ): HTMLElement {
-  const pending = post.pending!;
   const card = document.createElement("div");
   card.className = "card job-card";
 
@@ -156,11 +155,11 @@ function createPostCard(
 
   const title = document.createElement("h5");
   title.className = "card-title";
-  title.textContent = pending.title;
+  title.textContent = post.title;
 
   const text = document.createElement("p");
   text.className = "card-text";
-  text.textContent = pending.text;
+  text.textContent = post.content;
 
   const createdDate = document.createElement("p");
   createdDate.className = "text-muted small";
@@ -170,18 +169,11 @@ function createPostCard(
   cardBody.appendChild(text);
   cardBody.appendChild(createdDate);
 
-  if (pending.addFiles.length > 0) {
+  if (post.files.length > 0) {
     const filesDiv = document.createElement("div");
     filesDiv.className = "job-files";
-    filesDiv.innerHTML = `<strong>Add files:</strong> ${pending.addFiles.map((f) => f.name).join(", ")}`;
+    filesDiv.innerHTML = `<strong>Files:</strong> ${post.files.map((f: { name: string }) => f.name).join(", ")}`;
     cardBody.appendChild(filesDiv);
-  }
-
-  if (pending.removeFiles.length > 0) {
-    const removeDiv = document.createElement("div");
-    removeDiv.className = "job-files text-danger";
-    removeDiv.innerHTML = `<strong>Remove files:</strong> ${pending.removeFiles.map((f) => f.name).join(", ")}`;
-    cardBody.appendChild(removeDiv);
   }
 
   const statusText = document.createElement("div");
@@ -201,15 +193,15 @@ function createPostCard(
     statusText.textContent = "Opening Patreon and preparing your draft...";
 
     try {
+      console.log("Posting to Patreon:" + JSON.stringify(post));
       await onPostToPatreon(post);
       statusText.className = "small mt-2 text-success";
       statusText.textContent = "Posted and confirmed.";
       postButton.textContent = "Post to Patreon";
     } catch (error) {
+      console.error("Error posting to Patreon:", error);
       statusText.className = "small mt-2 text-danger";
-      statusText.textContent = `Failed to post: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`;
+      statusText.textContent = `Failed to post:` + error;
       postButton.textContent = "Post to Patreon";
     } finally {
       postButton.disabled = false;

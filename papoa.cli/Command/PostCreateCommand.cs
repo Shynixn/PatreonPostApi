@@ -14,53 +14,102 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
         var command = new System.CommandLine.Command("create", "Create a new post");
 
         var titleOption = new Option<string>("--title") { Required = true };
-        var textOption = new Option<string>("--text") { Required = false };
-        var textFormatOption = new Option<string>("--text-format")
+        var contentOption = new Option<string>("--content") { Required = false };
+        var contentFormatOption = new Option<string>("--content-format")
         {
             Required = false,
             DefaultValueFactory = _ => "text/plain",
         };
-        textFormatOption.AcceptOnlyFromAmong("text/plain", "text/markdown");
-        var textFileOption = new Option<string>("--text-file") { Required = false };
-        var addFilesOption = new Option<List<string>>("--add-file") { Required = false };
+        contentFormatOption.AcceptOnlyFromAmong("text/plain", "text/markdown");
+        var contentFileOption = new Option<string>("--content-file") { Required = false };
+        var isPublicOption = new Option<bool>("--is-public") { Required = false, DefaultValueFactory = _ => false };
+        var tierNamesOption = new Option<List<string>>("--tier-name") { Required = false };
+        var collectionNamesOption = new Option<List<string>>("--collection-name") { Required = false };
+        var publishDateUtcOption = new Option<string?>("--publish-date-utc") { Required = false };
+        var tagsOption = new Option<List<string>>("--tag") { Required = false };
+        var ttlDaysOption = new Option<int?>("--ttl-days") { Required = false };
+        var addFilesOption = new Option<List<string>>("--file") { Required = false };
+        var photoAttachmentFileNamesOption = new Option<List<string>>("--photo-attachment-file-name") { Required = false };
+        var attachmentFileNamesOption = new Option<List<string>>("--attachment-file-name") { Required = false };
         var passwordOption = new Option<string?>("--password") { Required = false };
         var outputFormatOption = new Option<string>("--output-format")
         {
             Required = false,
             DefaultValueFactory = _ => "text/plain",
         };
-        outputFormatOption.AcceptOnlyFromAmong("text/plain");
+        outputFormatOption.AcceptOnlyFromAmong("text/plain", "application/json");
 
         command.Add(titleOption);
-        command.Add(textOption);
-        command.Add(textFormatOption);
-        command.Add(textFileOption);
+        command.Add(contentOption);
+        command.Add(contentFormatOption);
+        command.Add(contentFileOption);
+        command.Add(isPublicOption);
+        command.Add(tierNamesOption);
+        command.Add(collectionNamesOption);
+        command.Add(publishDateUtcOption);
+        command.Add(tagsOption);
+        command.Add(ttlDaysOption);
         command.Add(addFilesOption);
+        command.Add(photoAttachmentFileNamesOption);
+        command.Add(attachmentFileNamesOption);
         command.Add(passwordOption);
         command.Add(outputFormatOption);
 
         command.SetAction(async parseResult =>
         {
             var title = parseResult.GetValue(titleOption)!;
-            var text = parseResult.GetValue(textOption) ?? string.Empty;
-            var textFormat = parseResult.GetValue(textFormatOption)!;
+            var content = parseResult.GetValue(contentOption) ?? string.Empty;
+            var contentFormat = parseResult.GetValue(contentFormatOption)!;
+            var isPublic = parseResult.GetValue(isPublicOption);
+            var tierNames = parseResult.GetValue(tierNamesOption) ?? [];
+            var collectionNames = parseResult.GetValue(collectionNamesOption) ?? [];
+            var publishDateUtc = parseResult.GetValue(publishDateUtcOption);
+            var tags = parseResult.GetValue(tagsOption) ?? [];
+            var ttlDays = parseResult.GetValue(ttlDaysOption);
             var outputFormat = parseResult.GetValue(outputFormatOption)!;
             var addFiles = parseResult.GetValue(addFilesOption) ?? [];
+            var photoAttachmentFileNames = parseResult.GetValue(photoAttachmentFileNamesOption) ?? [];
+            var attachmentFileNames = parseResult.GetValue(attachmentFileNamesOption) ?? [];
             var password = parseResult.GetValue(passwordOption);
-            var textFile = parseResult.GetValue(textFileOption);
+            var contentFile = parseResult.GetValue(contentFileOption);
 
-            if (!string.IsNullOrEmpty(textFile))
+            if (!string.IsNullOrEmpty(contentFile))
             {
-                text = await File.ReadAllTextAsync(textFile);
+                content = await File.ReadAllTextAsync(contentFile);
+            }
+
+            // Pre-encrypt files when a password is set so the size reported to the API
+            // matches the actual encrypted payload that will be uploaded.
+            var preparedFiles = new List<(string Path, byte[]? Bytes, long Size)>();
+            foreach (var path in addFiles)
+            {
+                if (!string.IsNullOrEmpty(password))
+                {
+                    var raw = await File.ReadAllBytesAsync(path);
+                    var enc = fileUploadService.Encrypt(raw, password);
+                    preparedFiles.Add((path, enc, enc.Length));
+                }
+                else
+                {
+                    preparedFiles.Add((path, null, new FileInfo(path).Length));
+                }
             }
 
             var request = new PostCreateRequest
             {
                 Title = title,
-                Text = text,
-                TextFormat = textFormat,
+                Content = content,
+                ContentFormat = contentFormat,
+                IsPublic = isPublic,
+                TierNames = tierNames.Count > 0 ? tierNames : null,
+                CollectionNames = collectionNames.Count > 0 ? collectionNames : null,
+                PublishDateUtc = publishDateUtc,
+                Tags = tags.Count > 0 ? tags : null,
+                TtlDays = ttlDays,
                 Encrypted = !string.IsNullOrEmpty(password),
-                AddFiles = addFiles.Select(e => new PostFile { Name = Path.GetFileName(e) }).ToList(),
+                Files = preparedFiles.Select(f => new PostFile { Name = Path.GetFileName(f.Path), Size = f.Size }).ToList(),
+                PhotoAttachmentFileNames = photoAttachmentFileNames.Count > 0 ? photoAttachmentFileNames : null,
+                AttachmentFileNames = attachmentFileNames.Count > 0 ? attachmentFileNames : null,
             };
 
             var createResult = await postService.CreatePostAsync(request);
@@ -68,31 +117,20 @@ public class PostCreateCommand(IPostService postService, IFileUploadService file
             for (var i = 0; i < createResult.UploadUrls.Count; i++)
             {
                 var uploadSession = createResult.UploadUrls[i];
-                var filePath = addFiles[i];
+                var (filePath, encryptedBytes, _) = preparedFiles[i];
 
-                if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.WriteLine($"Uploading {filePath}...");
-                }
+                printingService.PrintMessage($"Uploading {filePath}...", outputFormat);
 
-                await fileUploadService.UploadFileAsync(uploadSession, filePath, password);
+                if (encryptedBytes is not null)
+                    await fileUploadService.UploadBytesAsync(uploadSession, encryptedBytes, Path.GetFileName(filePath));
+                else
+                    await fileUploadService.UploadFileAsync(uploadSession, filePath, null);
 
-                if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.WriteLine($"Uploaded {filePath}.");
-                }
+                printingService.PrintMessage($"Uploaded {filePath}.", outputFormat);
             }
 
-            if (outputFormat.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
-            {
-                var post = createResult.Post;
-                Console.WriteLine("Post Created");
-                Console.WriteLine($"  Id:         {post.Id}");
-                Console.WriteLine($"  Title:      {printingService.StringProp(post.Title, post.Pending?.Title)}");
-                Console.WriteLine($"  Text:       {printingService.StringProp(post.Text, post.Pending?.Text)}");
-                Console.WriteLine($"  Files:      {printingService.FilesProp(post.Files, post.Pending?.AddFiles, post.Pending?.RemoveFiles)}");
-                Console.WriteLine($"  Created At: {post.CreatedAt}");
-            }
+            printingService.PrintMessage("Post Created", outputFormat);
+            printingService.PrintPost(createResult.Post, outputFormat);
         });
 
         return command;

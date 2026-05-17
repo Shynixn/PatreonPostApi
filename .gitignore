@@ -1,3 +1,5 @@
 .devcontainer/**
 .vscode/**
 workspace.sln
+build.sh
+update.sh
