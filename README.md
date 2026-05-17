@@ -56,6 +56,12 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 ### Step 3 — Configure the CLI
 
+The CLI contains an non-interactive mode for automations and an interactive, guided mode for basic operations. The guide here uses the interactive mode, but you should consider using the non-interactive mode in most scenarious.
+
+For the full CLI reference, non interactive, see the [CLI documentation](papoa.docs/CLI.md) and [Test examples](papoa.docs/TEST.md)
+
+---
+
 Open the interactive version of the CLI by just starting the downloaded CLI without any arguments.
 
 e.g. for windows, double click the `papoa-win-x64.exe` file
@@ -137,20 +143,45 @@ Content format:
 > text/markdown
 ```
 
+4. Set other optional fields or leave them empty
+
+```bash
+Is the post public (available to everyone)?
+No = restricted to paying Patreons only [y/n] (n): n
+Tier names (which tiers can access this post) (enter value, leave blank to finish)
+Value (blank = done):
+Collection names (collections this post belongs to) (enter value, leave blank to finish)
+Value (blank = done):
+```
+
 4. Browse to and add the `icon.png` file, then choose **✓ Done**
+
+```bash
+Add files to attach: (arrows to navigate, enter to open/select, choose ✓ Done when finished)
+Current: /home/myuser
+Selected: none
+Current: /home/myuser/git
+Selected: none
+Current: /home/myuser/git/PatreonPostApi
+Selected: none
+Current: /home/myuser/git/PatreonPostApi/papoa.resources
+Selected: none
+Added: icon.png
+Add another file? [y/n] (n): n
+```
 
 5. Select which files should be photo attachments (spacebar to toggle, enter to confirm)
 
 ```
 Which files should be photo attachments? (space to toggle, enter to confirm)
-> [ ] icon.png
+> [x] icon.png
 ```
 
 6. Select which files should be regular attachments
 
 ```
 Which files should be regular attachments? (space to toggle, enter to confirm)
-> [ ] icon.png
+> [x] icon.png
 ```
 
 7. Encrypt with password and add a personal password. You should use the same password for all of your posts.
