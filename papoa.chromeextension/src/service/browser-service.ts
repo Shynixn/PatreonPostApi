@@ -583,6 +583,40 @@ export class BrowserService {
   }
 
   /**
+   * Returns the value of a given attribute from the first element matched by a selector attribute and its value.
+   * @param attribute The attribute whose value you want to retrieve.
+   * @param selectAttribute The attribute used to find the element.
+   * @param selectAttributeValue The value of the selector attribute.
+   * @param tabId Optional tab ID to target, defaults to active tab.
+   */
+  async getAttributeValueByAttribute(
+    attribute: string,
+    selectAttribute: string,
+    selectAttributeValue: string,
+    tabId?: number,
+  ): Promise<string | null> {
+    const targetTabId = await this.resolveTabId(tabId);
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: targetTabId },
+      func: (attr: string, selAttr: string, selAttrVal: string) => {
+        let el = document.querySelector(`[${selAttr}='${selAttrVal}']`);
+        if (!el) {
+          el = document.querySelector(`[${selAttr}="${selAttrVal}"]`);
+        }
+        if (!el) {
+          console.warn(
+            `Element with attribute [${selAttr}="${selAttrVal}"] not found.`,
+          );
+          return null;
+        }
+        return el.getAttribute(attr);
+      },
+      args: [attribute, selectAttribute, selectAttributeValue],
+    });
+    return results?.[0]?.result ?? null;
+  }
+
+  /**
    * Clicks the first <button> element whose trimmed innerHTML matches the given string.
    * @param innerHtml The exact inner HTML to match (compared after trimming).
    * @param tabId Optional tab ID to target, defaults to active tab.

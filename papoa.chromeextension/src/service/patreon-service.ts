@@ -283,26 +283,31 @@ export class PatreonService {
 
     // Submit the post and confirm in Papoa
     if (autoSubmit) {
-      await this.browserService.delay(1000);
+      await this.browserService.delay(3000);
+      let buttonId = "make-a-post-action-publish";
       if (isEditingExistingPost) {
-        await this.browserService.clickElementByAttribute(
-          "data-tag",
-          "make-a-post-action-save_without_notifying",
-          targetTabId,
-        );
+        buttonId = "make-a-post-action-save_without_notifying";
       } else if (post.publishDateUtc != null) {
-        await this.browserService.clickElementByAttribute(
-          "data-tag",
-          "make-a-post-action-schedule_post",
-          targetTabId,
-        );
-      } else {
-        await this.browserService.clickElementByAttribute(
-          "data-tag",
-          "make-a-post-action-publish",
-          targetTabId,
-        );
+        buttonId = "make-a-post-action-schedule_post";
       }
+      while (true) {
+        const ariaDisabled =
+          await this.browserService.getAttributeValueByAttribute(
+            "aria-disabled",
+            "data-tag",
+            buttonId,
+            targetTabId,
+          );
+        if (ariaDisabled === "false") {
+          break;
+        }
+        await this.browserService.delay(1000);
+      }
+      await this.browserService.clickElementByAttribute(
+        "data-tag",
+        buttonId,
+        targetTabId,
+      );
       await this.browserService.delay(10000);
     }
 
