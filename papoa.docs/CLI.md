@@ -78,13 +78,13 @@ Updates an existing post's metadata. File attachments cannot be changed after cr
 Send `--status published` to confirm that the Chrome extension has successfully published the post to Patreon.
 
 ```
-papoa post update --id <id> --title <title> [options]
+papoa post update --id <id> [options]
 ```
 
 | Option                      | Required | Description                                                 |
 | --------------------------- | -------- | ----------------------------------------------------------- |
 | `--id <value>`              | Yes      | ID of the post to update                                    |
-| `--title <value>`           | Yes      | New title                                                   |
+| `--title <value>`           | No       | New title                                                   |
 | `--content <value>`         | No       | New body content                                            |
 | `--content-file <path>`     | No       | Read body content from a file (overrides `--content`)       |
 | `--content-format <value>`  | No       | `text/plain` (default) or `text/markdown`                   |
@@ -102,7 +102,7 @@ papoa post update --id <id> --title <title> [options]
 
 ```bash
 papoa post update --id abc123 --title "Updated Title" --content "New content" \
-  --tag v2 --status published --patreon-post-id "12345678"
+  --tag v2 --status published
 ```
 
 ---
