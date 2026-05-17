@@ -14,7 +14,7 @@ public class PostUpdateCommand(IPostService postService, IPrintingService printi
         var command = new System.CommandLine.Command("update", "Update an existing post");
 
         var idOption = new Option<string>("--id") { Required = true };
-        var titleOption = new Option<string>("--title") { Required = true };
+        var titleOption = new Option<string>("--title") { Required = false };
         var contentOption = new Option<string>("--content") { Required = false };
         var contentFormatOption = new Option<string>("--content-format")
         {
@@ -52,7 +52,7 @@ public class PostUpdateCommand(IPostService postService, IPrintingService printi
         command.SetAction(async parseResult =>
         {
             var id = parseResult.GetValue(idOption)!;
-            var title = parseResult.GetValue(titleOption)!;
+            var title = parseResult.GetValue(titleOption);
             var content = parseResult.GetValue(contentOption);
             var contentFormat = parseResult.GetValue(contentFormatOption);
             var isPublic = parseResult.GetValue(isPublicOption);
