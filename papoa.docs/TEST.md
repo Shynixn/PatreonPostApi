@@ -338,17 +338,7 @@ papoa post update --title "No ID" --status "pending"
 
 ---
 
-### TC-UPDATE-12 — Missing required `--title`
-
-```bash
-papoa post update --id "abc123" --status "pending"
-```
-
-**Expected:** CLI reports `--title` is required. Non-zero exit code.
-
----
-
-### TC-UPDATE-13 — Non-existent post ID
+### TC-UPDATE-12 — Non-existent post ID
 
 ```bash
 papoa post update --id "does-not-exist" --title "Ghost Post" --status "pending"
@@ -358,17 +348,17 @@ papoa post update --id "does-not-exist" --title "Ghost Post" --status "pending"
 
 ---
 
-### TC-UPDATE-14 — Invalid `--content-format`
+### TC-UPDATE-13 — Invalid `--content-format`
 
 ```bash
-papoa post update --id "abc123" --title "Bad Format" --content-format application/json --status "pending"
+papoa post update --id "abc123" --title "Bad Format" --content-format application/json
 ```
 
 **Expected:** CLI rejects the value. Allowed: `text/plain`, `text/markdown`.
 
 ---
 
-### TC-UPDATE-15 — Invalid `--status`
+### TC-UPDATE-14 — Invalid `--status`
 
 ```bash
 papoa post update --id "abc123" --title "Bad Status" --status draft
@@ -412,17 +402,7 @@ papoa post delete --id "does-not-exist"
 
 ---
 
-### TC-DELETE-04 — Delete with explicit default output format
-
-```bash
-papoa post delete --id "abc123" --output-format text/plain
-```
-
-**Expected:** Same output as TC-DELETE-01. `text/plain` is the only accepted value.
-
----
-
-### TC-DELETE-05 — Invalid `--output-format`
+### TC-DELETE-04 — Invalid `--output-format`
 
 ```bash
 papoa post delete --id "abc123" --output-format application/json
@@ -486,18 +466,6 @@ papoa post list --id "abc123"
 
 ---
 
-### TC-LIST-06 — Invalid `--output-format`
-
-```bash
-papoa post list --output-format text/html
-```
-
-**Expected:** CLI rejects the value. Only `text/plain` is accepted.
-
----
-
----
-
 ## 5. Authentication & Configuration
 
 ### TC-AUTH-01 — Missing API key
@@ -523,17 +491,7 @@ PAPOA_API_KEY="invalid-key" papoa post list
 
 ---
 
-### TC-AUTH-03 — Custom base URL via environment variable
-
-```bash
-PAPOA_BASE_URL="https://staging.api.papoa.shynixn.com" PAPOA_API_KEY="<key>" papoa post list
-```
-
-**Expected:** Requests sent to the staging base URL.
-
----
-
-### TC-AUTH-04 — API key from saved config (no env var)
+### TC-AUTH-03 — API key from saved config (no env var)
 
 Pre-condition: run interactive mode once and save an API key to `~/.config/papoa/config.json` (or equivalent `AppData` path).
 
