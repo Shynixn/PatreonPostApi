@@ -302,10 +302,6 @@ Yes, expect it to break in the future, potentially multiple times. Patreon can c
 
 ---
 
-## Limits
-
-This service does not support all functionalities of patreon.com web editor. Please test your use case using the free tier and submit feature requests by Github Issues. You can update the 1 free post per month multiple times and test different automation use cases. If you delete your post, you are going to loose access to it.
-
 ## Final Notes
 
 Thank you for using Papoa — I hope it saves you as much time as it saves me. If you run into issues or have ideas, feel free to open an issue on GitHub. You can also message me via private message on https://patreon.com/c/Shynixn
