@@ -45,7 +45,7 @@ For higher limits, subscribe to a membership at [patreon.com/c/shynixn/membershi
 
 | Tier      | API Requests / Day | Posts / Month | Upload Limit / Month |
 | --------- | ------------------ | ------------- | -------------------- |
-| Free      | 300                | 1             | 5 MB                 |
+| Free      | 300                | 5             | 5 MB                 |
 | Basic     | 300                | 100           | 500 MB               |
 | Elite     | 500                | 200           | 2 GB                 |
 | Legendary | 500                | 500           | 5 GB                 |
